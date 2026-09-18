@@ -1,0 +1,2180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高中数学竞赛 - Python 编程基础</title>
+    <!-- KaTeX 数学公式渲染 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});">
+    </script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #dbeafe;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --bg: #f0f4f8;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --code-bg: #1e293b;
+            --code-text: #e2e8f0;
+            --border: #cbd5e1;
+            --radius: 8px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: #fff;
+            padding: 24px 32px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,.15);
+        }
+        .header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+        .header .subtitle { opacity: .85; font-size: .95rem; }
+
+        /* ===== Navigation ===== */
+        .nav {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--surface);
+            border-bottom: 2px solid var(--border);
+            display: flex; justify-content: center; gap: 4px;
+            padding: 8px 16px; flex-wrap: wrap;
+            box-shadow: 0 1px 4px rgba(0,0,0,.06);
+        }
+        .nav a {
+            text-decoration: none; color: var(--text-light);
+            padding: 8px 20px; border-radius: var(--radius);
+            font-weight: 600; font-size: .92rem;
+            transition: all .2s;
+        }
+        .nav a:hover, .nav a.active {
+            background: var(--primary-light); color: var(--primary);
+        }
+
+        /* ===== Main Content ===== */
+        .main { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
+        .section {
+            margin-bottom: 48px;
+            scroll-margin-top: 70px;
+        }
+        .section-title {
+            font-size: 1.5rem; color: var(--primary-dark);
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 8px; margin-bottom: 20px;
+        }
+        .sub-title {
+            font-size: 1.15rem; color: var(--primary);
+            margin: 24px 0 10px;
+        }
+
+        /* ===== Content Boxes ===== */
+        .box {
+            border-radius: var(--radius); padding: 16px 20px;
+            margin: 14px 0;
+        }
+        .box-def  { background: var(--primary-light); border-left: 4px solid var(--primary); }
+        .box-formula { background: #f8fafc; border-left: 4px solid var(--warning); }
+        .box-tip  { background: var(--success-light); border-left: 4px solid var(--success); }
+        .box-warn { background: var(--warning-light); border-left: 4px solid var(--warning); }
+        .box-exercise {
+            background: #fefce8; border-left: 4px solid var(--warning);
+            border: 1px solid #fde68a; background: #fffbeb;
+        }
+        .box p, .box ul { margin: 4px 0; }
+        .box-label {
+            font-weight: 700; font-size: .85rem;
+            text-transform: uppercase; letter-spacing: .5px;
+            margin-bottom: 4px; display: block;
+        }
+        .box-def .box-label { color: var(--primary); }
+        .box-formula .box-label { color: #b45309; }
+        .box-tip .box-label { color: var(--success); }
+        .box-exercise .box-label { color: #b45309; }
+
+        /* ===== Code Editor ===== */
+        .code-block { margin: 14px 0; }
+        .code-textarea {
+            width: 100%; min-height: 100px; max-height: 400px;
+            font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+            font-size: .88rem; line-height: 1.5;
+            background: var(--code-bg); color: var(--code-text);
+            border: none; border-radius: var(--radius) var(--radius) 0 0;
+            padding: 14px 16px; resize: vertical;
+            tab-size: 4;
+        }
+        .code-textarea:focus { outline: 2px solid var(--primary); outline-offset: -2px; }
+        .code-toolbar {
+            display: flex; gap: 8px; align-items: center;
+            background: #334155; padding: 6px 12px;
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+        .btn {
+            padding: 5px 16px; border: none; border-radius: 5px;
+            font-size: .82rem; font-weight: 600; cursor: pointer;
+            transition: all .15s; display: inline-flex; align-items: center; gap: 5px;
+        }
+        .btn-run    { background: var(--success); color: #fff; }
+        .btn-run:hover { background: #059669; transform: translateY(-1px); }
+        .btn-run::before { content: "▶ "; font-size: .7rem; }
+        .btn-clear  { background: #64748b; color: #fff; }
+        .btn-clear:hover { background: #475569; }
+        .btn-answer { background: var(--warning); color: #fff; }
+        .btn-answer:hover { background: #d97706; }
+        .btn-reset  { background: #94a3b8; color: #fff; font-size: .78rem; padding: 4px 10px; }
+        .btn-reset:hover { background: #64748b; }
+
+        /* ===== Output ===== */
+        .output-area {
+            margin: 8px 0 14px;
+            background: #f8fafc; border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 12px 16px;
+            min-height: 36px; max-height: 400px; overflow: auto;
+            font-family: "Cascadia Code", "Consolas", monospace;
+            font-size: .85rem; white-space: pre-wrap; word-break: break-all;
+        }
+        .output-area .stdout  { color: var(--text); }
+        .output-area .stderr  { color: var(--danger); }
+        .output-area .running { color: var(--text-light); }
+        .output-area .empty   { color: var(--text-light); font-style: italic; }
+        .output-area img.plot-image {
+            max-width: 100%; border-radius: var(--radius);
+            margin: 8px 0; box-shadow: 0 2px 8px rgba(0,0,0,.1);
+        }
+
+
+        /* ===== Misc ===== */
+        hr { border: none; border-top: 1px dashed var(--border); margin: 24px 0; }
+        ul, ol { padding-left: 24px; }
+        li { margin: 3px 0; }
+        strong { color: var(--primary-dark); }
+        a { color: var(--primary); }
+
+        /* ===== Editor Section ===== */
+        .editor-layout {
+            display: grid;
+            grid-template-columns: 1fr 260px;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        @media (max-width: 800px) {
+            .editor-layout { grid-template-columns: 1fr; }
+        }
+        .editor-main { display: flex; flex-direction: column; gap: 8px; }
+        .editor-filename-row {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .editor-filename-row label {
+            font-weight: 600; font-size: .88rem; color: var(--text-light); white-space: nowrap;
+        }
+        .editor-filename-input {
+            flex: 1; padding: 6px 10px; border: 1px solid var(--border);
+            border-radius: var(--radius); font-size: .88rem;
+            font-family: "Cascadia Code", "Consolas", monospace;
+        }
+        .editor-filename-input:focus { outline: 2px solid var(--primary); outline-offset: -2px; }
+        .editor-filename-suffix {
+            font-weight: 600; color: var(--text-light); font-size: .88rem;
+            font-family: "Cascadia Code", "Consolas", monospace;
+        }
+        .editor-textarea {
+            width: 100%; min-height: 320px; max-height: 600px;
+            font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+            font-size: .88rem; line-height: 1.5;
+            background: var(--code-bg); color: var(--code-text);
+            border: none; border-radius: var(--radius) var(--radius) 0 0;
+            padding: 14px 16px; resize: vertical; tab-size: 4;
+        }
+        .editor-textarea:focus { outline: 2px solid var(--primary); outline-offset: -2px; }
+        .editor-toolbar {
+            display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+            background: #334155; padding: 6px 12px;
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+        .editor-toolbar .btn-new { background: var(--primary); color: #fff; }
+        .editor-toolbar .btn-new:hover { background: var(--primary-dark); }
+        .editor-toolbar .btn-save { background: var(--success); color: #fff; }
+        .editor-toolbar .btn-save:hover { background: #059669; }
+        .editor-toolbar .btn-editor-run { background: #8b5cf6; color: #fff; }
+        .editor-toolbar .btn-editor-run:hover { background: #7c3aed; }
+        .editor-status {
+            margin-left: auto; font-size: .78rem; color: #94a3b8;
+        }
+
+        /* File list panel */
+        .file-panel {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden;
+            display: flex; flex-direction: column; max-height: 500px;
+        }
+        .file-panel-header {
+            padding: 10px 14px; font-weight: 700; font-size: .88rem;
+            background: var(--primary-light); color: var(--primary-dark);
+            border-bottom: 1px solid var(--border);
+        }
+        .file-panel-list {
+            flex: 1; overflow-y: auto; padding: 4px 0;
+        }
+        .file-panel-empty {
+            padding: 16px; text-align: center; color: var(--text-light);
+            font-size: .85rem; font-style: italic;
+        }
+        .file-item {
+            padding: 8px 14px; border-bottom: 1px solid #f1f5f9;
+            transition: background .15s;
+        }
+        .file-item:hover { background: #f8fafc; }
+        .file-item-name {
+            font-weight: 600; font-size: .85rem; color: var(--text);
+            font-family: "Cascadia Code", "Consolas", monospace;
+            margin-bottom: 2px;
+        }
+        .file-item-time {
+            font-size: .75rem; color: var(--text-light);
+        }
+        .file-item-actions {
+            display: flex; gap: 4px; margin-top: 6px;
+        }
+        .file-item-actions .btn { padding: 3px 8px; font-size: .75rem; }
+        .btn-open { background: var(--primary); color: #fff; }
+        .btn-open:hover { background: var(--primary-dark); }
+        .btn-file-run { background: #8b5cf6; color: #fff; }
+        .btn-file-run:hover { background: #7c3aed; }
+        .btn-del { background: var(--danger); color: #fff; }
+        .btn-del:hover { background: #dc2626; }
+
+        /* Toast notification */
+        .toast {
+            position: fixed; top: 20px; right: 20px; z-index: 999;
+            padding: 10px 20px; border-radius: var(--radius);
+            font-size: .88rem; font-weight: 600; color: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,.2);
+            animation: toastIn .3s ease, toastOut .3s ease 2s forwards;
+            pointer-events: none;
+        }
+        .toast-success { background: var(--success); }
+        .toast-error { background: var(--danger); }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+        @media (max-width: 640px) {
+            .header h1 { font-size: 1.3rem; }
+            .nav a { padding: 6px 12px; font-size: .82rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== Header ==================== -->
+<div class="header">
+    <h1>高中数学竞赛 · Python 编程基础</h1>
+    <p class="subtitle">线性代数 · 线性回归 · NumPy · Python 语法测试</p>
+</div>
+
+<!-- ==================== Navigation ==================== -->
+<nav class="nav">
+    <a href="#overview">导览</a>
+    <a href="#linalg">线性代数</a>
+    <a href="#linreg">线性回归</a>
+    <a href="#numpy">NumPy</a>
+    <a href="#pytest">Python 测试</a>
+    <a href="#editor">编辑器</a>
+</nav>
+
+<!-- ==================== Main ==================== -->
+<div class="main">
+
+<!-- ========== Overview ========== -->
+<section id="overview" class="section">
+    <h2 class="section-title">课程导览</h2>
+    <p>本课程面向高中数学竞赛学生，通过 Python 编程深入理解线性回归与相关数学基础。所有代码均可直接在网页中编辑和运行，即改即跑，所见即所得。</p>
+
+    <div class="box box-tip">
+        <span class="box-label">使用说明</span>
+        <ul>
+            <li>点击 <strong>运行</strong> 按钮执行代码，结果即时显示在代码框下方</li>
+            <li>可随意修改代码再运行，反复尝试不同参数与写法</li>
+            <li>练习题可点击 <strong>查看答案</strong> 查看参考解法</li>
+            <li>支持 <code>matplotlib</code> 画图，图片直接渲染在输出区</li>
+            <li>快捷键：<code>Tab</code> 缩进，<code>Ctrl+Enter</code> 运行</li>
+        </ul>
+    </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- ========== Section 1: 线性代数基础 ========== -->
+<!-- ================================================================ -->
+<section id="linalg" class="section">
+    <h2 class="section-title">线性代数基础</h2>
+
+    <!-- 1.1 向量 -->
+    <h3 class="sub-title">1.1 向量与运算</h3>
+
+    <div class="box box-def">
+        <span class="box-label">定义</span>
+        <p><strong>向量</strong>是一个有序的数字列表，如 $\mathbf{v} = (v_1, v_2, \ldots, v_n)$。在 Python 中通常用列表或 NumPy 数组表示。几何上，$n$ 维向量对应 $n$ 维空间中从原点出发的一条有向线段。</p>
+    </div>
+
+    <div class="box box-formula">
+        <span class="box-label">核心公式</span>
+        <ul>
+            <li><strong>向量加法</strong>：$\mathbf{a} + \mathbf{b} = (a_1+b_1,\; a_2+b_2,\; \ldots,\; a_n+b_n)$</li>
+            <li><strong>标量乘法</strong>：$c\mathbf{v} = (cv_1,\; cv_2,\; \ldots,\; cv_n)$</li>
+            <li><strong>点积（内积）</strong>：$\mathbf{a} \cdot \mathbf{b} = \sum_{i=1}^{n} a_i b_i$，几何意义为 $\|\mathbf{a}\|\|\mathbf{b}\|\cos\theta$</li>
+            <li><strong>向量模长</strong>：$\|\mathbf{v}\| = \sqrt{\mathbf{v} \cdot \mathbf{v}} = \sqrt{v_1^2 + v_2^2 + \cdots + v_n^2}$</li>
+        </ul>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linalg-1" rows="14">
+# 向量运算示例（使用 Python 列表）
+a = [1, 2, 3]
+b = [4, 5, 6]
+
+# 向量加法
+add = [a[i] + b[i] for i in range(len(a))]
+print(f"a + b = {add}")
+
+# 标量乘法
+scalar = 3
+scaled = [scalar * x for x in a]
+print(f"3 * a = {scaled}")
+
+# 点积
+dot = sum(a[i] * b[i] for i in range(len(a)))
+print(f"a · b = {dot}")
+
+# 模长
+import math
+norm = math.sqrt(sum(x**2 for x in a))
+print(f"|a| = {norm:.4f}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linalg-1','output-linalg-1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linalg-1')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linalg-1"></div>
+
+    <!-- 1.2 矩阵 -->
+    <h3 class="sub-title">1.2 矩阵与运算</h3>
+
+    <div class="box box-def">
+        <span class="box-label">定义</span>
+        <p><strong>矩阵</strong>是数字的矩形排列，$m \times n$ 矩阵有 $m$ 行 $n$ 列，记作 $A = [a_{ij}]_{m \times n}$。矩阵可以看作线性变换的数值表示。</p>
+    </div>
+
+    <div class="box box-formula">
+        <span class="box-label">核心公式</span>
+        <ul>
+            <li><strong>矩阵乘法</strong>：$C = AB$，其中 $c_{ij} = \sum_{k=1}^{p} a_{ik} b_{kj}$（$A$ 为 $m \times p$，$B$ 为 $p \times n$，结果为 $m \times n$）</li>
+            <li><strong>转置</strong>：$(A^T)_{ij} = a_{ji}$，即行变列、列变行；性质 $(AB)^T = B^T A^T$</li>
+            <li><strong>单位矩阵</strong>：$I_n$，对角线为 1，其余为 0；满足 $AI = IA = A$</li>
+        </ul>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linalg-2" rows="18">
+# 矩阵运算示例（使用 Python 列表）
+A = [[1, 2], [3, 4]]
+B = [[5, 6], [7, 8]]
+
+# 矩阵加法
+C_add = [[A[i][j] + B[i][j] for j in range(2)] for i in range(2)]
+print("A + B =", C_add)
+
+# 矩阵乘法
+def mat_mul(A, B):
+    m, p, n = len(A), len(A[0]), len(B[0])
+    C = [[0]*n for _ in range(m)]
+    for i in range(m):
+        for j in range(n):
+            for k in range(p):
+                C[i][j] += A[i][k] * B[k][j]
+    return C
+
+print("A × B =", mat_mul(A, B))
+
+# 转置
+def transpose(M):
+    return [[M[j][i] for j in range(len(M))] for i in range(len(M[0]))]
+
+print("A^T =", transpose(A))
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linalg-2','output-linalg-2')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linalg-2')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linalg-2"></div>
+
+    <!-- 1.3 用 NumPy 做线性代数 -->
+    <h3 class="sub-title">1.3 用 NumPy 做线性代数</h3>
+
+    <div class="box box-tip">
+        <span class="box-label">提示</span>
+        <p>NumPy 提供了高效的向量和矩阵运算，竞赛中常用来快速验证手算结果，避免低级计算错误。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linalg-3" rows="16">
+import numpy as np
+
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+
+print(f"向量加法:  a + b = {a + b}")
+print(f"标量乘法:  3 * a = {3 * a}")
+print(f"点积:      a · b = {np.dot(a, b)}")
+print(f"模长:      |a| = {np.linalg.norm(a):.4f}")
+
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[5, 6], [7, 8]])
+
+print(f"\n矩阵乘法 A@B:\n{A @ B}")
+print(f"\n转置 A^T:\n{A.T}")
+print(f"\n行列式 det(A) = {np.linalg.det(A):.1f}")
+print(f"\n逆矩阵 A^(-1):\n{np.linalg.inv(A)}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linalg-3','output-linalg-3')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linalg-3')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linalg-3"></div>
+
+    <hr>
+
+    <!-- 练习题 -->
+    <h3 class="sub-title">练习题</h3>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 1</span>
+        <p>给定向量 $\mathbf{a} = (1, 2, 3, 4, 5)$ 和 $\mathbf{b} = (5, 4, 3, 2, 1)$，<strong>不使用 NumPy</strong>，手写计算它们的点积和夹角余弦值 $\cos\theta = \frac{\mathbf{a} \cdot \mathbf{b}}{\|\mathbf{a}\| \|\mathbf{b}\|}$。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linalg-ex1" rows="6"># 请在此编写代码
+a = [1, 2, 3, 4, 5]
+b = [5, 4, 3, 2, 1]
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linalg-ex1','output-linalg-ex1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linalg-ex1')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linalg-ex1','linalg-ex1')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linalg-ex1"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 2</span>
+        <p>实现一个函数 <code>mat_mul(A, B)</code> 计算两个矩阵的乘积（不使用 NumPy），然后用 <code>A = [[1,2,3],[4,5,6]]</code>，<code>B = [[7,8],[9,10],[11,12]]</code> 验证。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linalg-ex2" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linalg-ex2','output-linalg-ex2')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linalg-ex2')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linalg-ex2','linalg-ex2')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linalg-ex2"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 3</span>
+        <p>用 NumPy 验证练习 2 的结果，并额外计算 $A^T$ 和 $B^T$ 的乘积 $(A^T)(B^T)$。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linalg-ex3" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linalg-ex3','output-linalg-ex3')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linalg-ex3')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linalg-ex3','linalg-ex3')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linalg-ex3"></div>
+</section>
+
+<!-- ================================================================ -->
+<!-- ========== Section 2: 线性回归 ========== -->
+<!-- ================================================================ -->
+<section id="linreg" class="section">
+    <h2 class="section-title">线性回归</h2>
+
+    <!-- 2.1 问题引入 -->
+    <h3 class="sub-title">2.1 问题引入</h3>
+
+    <div class="box box-def">
+        <span class="box-label">什么是线性回归</span>
+        <p>给定一组观测数据 $(x_1,y_1), (x_2,y_2), \ldots, (x_n,y_n)$，找到一条直线 $y = wx + b$，使得这条直线"尽可能靠近"所有数据点。"靠近"的标准取残差平方和最小，这就是<strong>最小二乘法</strong>。</p>
+        <p>线性回归是数学竞赛中<strong>数据拟合</strong>类问题的核心工具，也是统计学习的基础。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-1" rows="10">
+# 看看原始数据
+import numpy as np
+
+X = np.array([1, 2, 3, 4, 5])
+Y = np.array([2.1, 3.9, 6.2, 7.8, 10.1])
+
+print("数据点:")
+for x, y in zip(X, Y):
+    print(f"  x={x}, y={y}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-1','output-linreg-1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-1')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-1"></div>
+
+    <!-- 2.2 数学原理 -->
+    <h3 class="sub-title">2.2 数学原理：最小二乘法</h3>
+
+    <div class="box box-formula">
+        <span class="box-label">推导过程</span>
+        <p><strong>目标</strong>：最小化残差平方和（损失函数）：</p>
+        $$L(w, b) = \sum_{i=1}^{n} (y_i - (wx_i + b))^2$$
+        <p><strong>矩阵形式</strong>：将模型写成 $Y = X\beta$，其中</p>
+        $$X = \begin{bmatrix} 1 & x_1 \\ 1 & x_2 \\ \vdots & \vdots \\ 1 & x_n \end{bmatrix}, \quad \beta = \begin{bmatrix} b \\ w \end{bmatrix}, \quad Y = \begin{bmatrix} y_1 \\ y_2 \\ \vdots \\ y_n \end{bmatrix}$$
+        <p><strong>正规方程</strong>（对 $\beta$ 求导令其为零）：</p>
+        $$X^T X \beta = X^T Y \implies \beta = (X^T X)^{-1} X^T Y$$
+    </div>
+
+    <div class="box box-tip">
+        <span class="box-label">竞赛提示</span>
+        <p>竞赛中常考正规方程的推导：对损失函数 $L$ 分别关于 $w$ 和 $b$ 求偏导，令其为零，联立得到关于 $w, b$ 的线性方程组。掌握这一推导过程，是解决数据拟合类竞赛题的关键。</p>
+    </div>
+
+    <!-- 2.3 NumPy 实现 -->
+    <h3 class="sub-title">2.3 用 NumPy 实现线性回归</h3>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-2" rows="18">
+import numpy as np
+
+# 数据
+X_raw = np.array([1, 2, 3, 4, 5])
+Y = np.array([2.1, 3.9, 6.2, 7.8, 10.1])
+
+# 构造设计矩阵 X = [1, x]（第一列全1对应截距b）
+X = np.column_stack([np.ones_like(X_raw), X_raw])
+print("设计矩阵 X:")
+print(X)
+
+# 正规方程: beta = (X^T X)^{-1} X^T Y
+XtX = X.T @ X
+XtY = X.T @ Y
+beta = np.linalg.inv(XtX) @ XtY
+
+b, w = beta
+print(f"\n截距 b = {b:.4f}")
+print(f"斜率 w = {w:.4f}")
+print(f"回归方程: y = {w:.4f}x + {b:.4f}")
+
+# 预测
+Y_pred = X @ beta
+print(f"\n预测值: {Y_pred.round(2)}")
+print(f"真实值: {Y}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-2','output-linreg-2')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-2')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-2"></div>
+
+    <!-- 2.4 R² 评估 -->
+    <h3 class="sub-title">2.4 模型评估：决定系数 $R^2$</h3>
+
+    <div class="box box-formula">
+        <span class="box-label">公式</span>
+        $$R^2 = 1 - \frac{SS_{res}}{SS_{tot}} = 1 - \frac{\sum_i(y_i - \hat{y}_i)^2}{\sum_i(y_i - \bar{y})^2}$$
+        <p>$R^2$ 越接近 1 表示拟合越好，$R^2 = 1$ 表示完美拟合。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-3" rows="14">
+import numpy as np
+
+X_raw = np.array([1, 2, 3, 4, 5])
+Y = np.array([2.1, 3.9, 6.2, 7.8, 10.1])
+
+X = np.column_stack([np.ones_like(X_raw), X_raw])
+beta = np.linalg.inv(X.T @ X) @ X.T @ Y
+Y_pred = X @ beta
+
+# 计算 R²
+SS_res = np.sum((Y - Y_pred) ** 2)   # 残差平方和
+SS_tot = np.sum((Y - np.mean(Y)) ** 2)  # 总平方和
+R2 = 1 - SS_res / SS_tot
+
+print(f"SS_res (残差平方和) = {SS_res:.4f}")
+print(f"SS_tot (总平方和)   = {SS_tot:.4f}")
+print(f"R² = {R2:.6f}")
+print(f"拟合优度: {R2*100:.2f}%")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-3','output-linreg-3')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-3')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-3"></div>
+
+    <!-- 2.5 可视化 -->
+    <h3 class="sub-title">2.5 可视化</h3>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-4" rows="18">
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 数据
+X_raw = np.array([1, 2, 3, 4, 5])
+Y = np.array([2.1, 3.9, 6.2, 7.8, 10.1])
+
+# 拟合
+X = np.column_stack([np.ones_like(X_raw), X_raw])
+beta = np.linalg.inv(X.T @ X) @ X.T @ Y
+b, w = beta
+
+# 绘图
+plt.figure(figsize=(7, 4.5))
+plt.scatter(X_raw, Y, color='red', s=60, label='数据点', zorder=3)
+x_line = np.linspace(0, 6, 100)
+plt.plot(x_line, w * x_line + b, 'b-', linewidth=2,
+         label=f'y = {w:.2f}x + {b:.2f}')
+
+# 残差线
+for xi, yi in zip(X_raw, Y):
+    yi_pred = w * xi + b
+    plt.plot([xi, xi], [yi, yi_pred], 'g--', alpha=0.5)
+
+plt.xlabel('x', fontsize=12)
+plt.ylabel('y', fontsize=12)
+plt.title('线性回归拟合结果', fontsize=14)
+plt.legend(fontsize=11)
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-4','output-linreg-4')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-4')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-4"></div>
+
+    <hr>
+
+    <!-- 练习题 -->
+    <h3 class="sub-title">练习题</h3>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 1</span>
+        <p>给定数据 X = [2, 4, 6, 8, 10], Y = [3.5, 7.2, 10.8, 14.1, 18.3]，用正规方程求线性回归 $y = wx + b$，并打印 $w$、$b$ 和回归方程。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-ex1" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-ex1','output-linreg-ex1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-ex1')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linreg-ex1','linreg-ex1')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-ex1"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 2</span>
+        <p>对练习 1 的结果计算 $R^2$ 值，并判断拟合效果。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-ex2" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-ex2','output-linreg-ex2')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-ex2')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linreg-ex2','linreg-ex2')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-ex2"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 3</span>
+        <p>对练习 1 的数据绘制散点图和回归直线，并标注 $R^2$ 值在图上。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-ex3" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-ex3','output-linreg-ex3')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-ex3')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linreg-ex3','linreg-ex3')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-ex3"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 4</span>
+        <p>给定3个数据点 $(1,2), (2,3), (3,5)$，<strong>不使用 NumPy</strong>，手动构造设计矩阵 $X$，计算 $X^T X$ 和 $X^T Y$，解 2×2 线性方程组求出斜率 $w$ 和截距 $b$。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-ex4" rows="4"># 请在此编写代码（不使用 NumPy）
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-ex4','output-linreg-ex4')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-ex4')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linreg-ex4','linreg-ex4')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-ex4"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 5</span>
+        <p>对练习 4 的回归结果，计算每个数据点的残差 $e_i = y_i - \hat{y}_i$，并验证两条重要性质：</p>
+        <ul>
+            <li>① 残差之和为零：$\sum_{i=1}^{n} e_i = 0$</li>
+            <li>② 残差与预测值不相关：$\sum_{i=1}^{n} e_i \hat{y}_i = 0$</li>
+        </ul>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-ex5" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-ex5','output-linreg-ex5')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-ex5')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linreg-ex5','linreg-ex5')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-ex5"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 6</span>
+        <p><strong>回归线过重心</strong>：验证回归直线 $y = wx + b$ 必过数据的重心点 $(\bar{x}, \bar{y})$，即 $\bar{y} = w\bar{x} + b$。请用至少 <strong>3 组不同数据</strong>验证此性质，并用 NumPy 画出其中一组的散点图、回归线和重心点。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-ex6" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-ex6','output-linreg-ex6')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-ex6')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linreg-ex6','linreg-ex6')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-ex6"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 7</span>
+        <p><strong>数据中心化</strong>：对数据做变换 $x_i' = x_i - \bar{x}$（中心化），对 $(x_i', y_i)$ 做线性回归 $y = w'x' + b'$。观察并回答：</p>
+        <ul>
+            <li>斜率 $w'$ 与原斜率 $w$ 有什么关系？</li>
+            <li>新截距 $b'$ 等于什么？</li>
+            <li>为什么中心化能简化计算？</li>
+        </ul>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-ex7" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-ex7','output-linreg-ex7')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-ex7')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linreg-ex7','linreg-ex7')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-ex7"></div>
+
+    <hr>
+
+    <h3 class="sub-title">🏆 竞赛级挑战题</h3>
+
+    <div class="box box-exercise" style="border-left: 4px solid #ef4444;">
+        <span class="box-label" style="color: #dc2626;">竞赛题 1</span>
+        <p><strong>正规方程的代数推导</strong></p>
+        <p>对数据 $(x_1,y_1), \ldots, (x_n,y_n)$：</p>
+        <ol>
+            <li>从矩阵正规方程 $X^TX\beta = X^TY$ 出发，展开矩阵乘法，推导出标量公式：
+            $$w = \frac{n\sum x_iy_i - \sum x_i \cdot \sum y_i}{n\sum x_i^2 - (\sum x_i)^2}, \quad b = \bar{y} - w\bar{x}$$
+            </li>
+            <li>用上述公式，对数据 $(1, 2.1), (2, 3.9), (3, 6.2), (4, 7.8), (5, 10.1)$ <strong>手算</strong>出 $w$ 和 $b$（保留4位小数），写出计算过程；</li>
+            <li>用代码验证手算结果与 NumPy 正规方程结果一致。</li>
+        </ol>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-ex8" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-ex8','output-linreg-ex8')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-ex8')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linreg-ex8','linreg-ex8')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-ex8"></div>
+
+    <div class="box box-exercise" style="border-left: 4px solid #ef4444;">
+        <span class="box-label" style="color: #dc2626;">竞赛题 2</span>
+        <p><strong>过原点模型与模型选择</strong></p>
+        <p>物理实验测量弹簧伸长量 $x$（cm）与弹力 $y$（N），得到数据：</p>
+        <p>$ (2, 4.1),\ (4, 8.3),\ (6, 11.8),\ (8, 16.2),\ (10, 20.1) $</p>
+        <p>已知胡克定律 $y = kx$（力与伸长量成正比）。请完成：</p>
+        <ol>
+            <li>对<strong>过原点模型</strong> $y = kx$（无截距），最小化 $\sum(y_i - kx_i)^2$，推导最小二乘估计 $k = \frac{\sum x_iy_i}{\sum x_i^2}$；</li>
+            <li>计算弹性系数 $k$ 的值；</li>
+            <li>同时用标准线性回归 $y = wx + b$ 拟合，计算两个模型的残差平方和 $RSS$；</li>
+            <li>绘制两模型拟合图对比，判断哪个模型更合理并说明理由。</li>
+        </ol>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-linreg-ex9" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-linreg-ex9','output-linreg-ex9')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-linreg-ex9')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-linreg-ex9','linreg-ex9')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-linreg-ex9"></div>
+</section>
+
+<!-- ================================================================ -->
+<!-- ========== Section 3: NumPy 基础 ========== -->
+<!-- ================================================================ -->
+<section id="numpy" class="section">
+    <h2 class="section-title">NumPy 基础</h2>
+
+    <!-- 3.1 数组创建 -->
+    <h3 class="sub-title">3.1 数组创建</h3>
+
+    <div class="box box-def">
+        <span class="box-label">核心概念</span>
+        <p>NumPy 的核心是 <code>ndarray</code>（N 维数组），相比 Python 列表有两个核心优势：<strong>向量化运算</strong>（无需显式循环）和<strong>高性能</strong>（底层 C 实现）。在数学竞赛编程中，NumPy 是处理矩阵运算和数值计算的首选工具。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-numpy-1" rows="20">
+import numpy as np
+
+# 从列表创建
+a = np.array([1, 2, 3, 4, 5])
+print("从列表:", a)
+
+# 特殊数组
+print("zeros(3):  ", np.zeros(3))
+print("ones((2,3)):\n", np.ones((2, 3)))
+print("eye(3):    \n", np.eye(3))         # 单位矩阵
+
+# 序列
+print("\narange(1,10,2): ", np.arange(1, 10, 2))   # 起始,结束,步长
+print("linspace(0,1,5):", np.linspace(0, 1, 5))    # 起始,结束,个数
+
+# 随机数
+np.random.seed(42)  # 固定种子保证可复现
+print("randint(1,10,5):", np.random.randint(1, 10, 5))
+print("randn(3):       ", np.random.randn(3))  # 标准正态
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-numpy-1','output-numpy-1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-numpy-1')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-numpy-1"></div>
+
+    <!-- 3.2 数组属性与运算 -->
+    <h3 class="sub-title">3.2 数组属性与运算</h3>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-numpy-2" rows="18">
+import numpy as np
+
+a = np.array([1, 2, 3, 4])
+M = np.array([[1, 2, 3], [4, 5, 6]])
+
+# 属性
+print(f"a 的形状: {a.shape}, 维度: {a.ndim}, 类型: {a.dtype}")
+print(f"M 的形状: {M.shape}, 维度: {M.ndim}, 大小: {M.size}")
+
+# 逐元素运算
+b = np.array([10, 20, 30, 40])
+print(f"\na + b  = {a + b}")
+print(f"a * b  = {a * b}")     # 逐元素乘！不是矩阵乘
+print(f"a ** 2 = {a ** 2}")
+print(f"sqrt(a) = {np.sqrt(a)}")
+
+# 矩阵乘法用 @ 或 dot
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[5, 6], [7, 8]])
+print(f"\nA @ B =\n{A @ B}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-numpy-2','output-numpy-2')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-numpy-2')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-numpy-2"></div>
+
+    <!-- 3.3 索引与切片 -->
+    <h3 class="sub-title">3.3 索引与切片</h3>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-numpy-3" rows="18">
+import numpy as np
+
+M = np.arange(1, 13).reshape(3, 4)
+print("矩阵 M:")
+print(M)
+
+# 基本索引
+print(f"\nM[0]    = {M[0]}       # 第0行")
+print(f"M[1, 2] = {M[1, 2]}      # 第1行第2列")
+print(f"M[:, 1] = {M[:, 1]}    # 第1列（所有行）")
+
+# 切片
+print(f"\nM[0:2]  =\n{M[0:2]}    # 前2行")
+print(f"\nM[:, 1:3] =\n{M[:, 1:3]}  # 第1~2列")
+
+# 布尔索引
+print(f"\nM > 6 的元素: {M[M > 6]}")
+
+# 花式索引
+print(f"M[[0,2]] =\n{M[[0, 2]]}   # 第0行和第2行")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-numpy-3','output-numpy-3')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-numpy-3')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-numpy-3"></div>
+
+    <!-- 3.4 常用函数 -->
+    <h3 class="sub-title">3.4 常用函数</h3>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-numpy-4" rows="20">
+import numpy as np
+
+a = np.array([3, 1, 4, 1, 5, 9, 2, 6])
+
+# 统计
+print(f"sum   = {np.sum(a)}")
+print(f"mean  = {np.mean(a):.2f}")
+print(f"std   = {np.std(a):.2f}")
+print(f"min   = {np.min(a)}, argmin = {np.argmin(a)}")
+print(f"max   = {np.max(a)}, argmax = {np.argmax(a)}")
+print(f"median= {np.median(a)}")
+
+# 排序
+print(f"sort  = {np.sort(a)}")
+print(f"argsort = {np.argsort(a)}  # 排序后的原索引")
+
+# 变形
+M = np.arange(1, 10).reshape(3, 3)
+print(f"\nreshape(3,3):\n{M}")
+print(f"\nflatten: {M.flatten()}")
+print(f"transpose:\n{M.T}")
+
+# 拼接
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+print(f"\nconcatenate: {np.concatenate([a, b])}")
+print(f"stack (纵向):\n{np.vstack([a, b])}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-numpy-4','output-numpy-4')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-numpy-4')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-numpy-4"></div>
+
+    <hr>
+
+    <!-- 练习题 -->
+    <h3 class="sub-title">练习题</h3>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 1</span>
+        <p>创建一个 $5 \times 5$ 的矩阵，值从 1 到 25，提取主对角线，计算迹（对角线元素之和）。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-numpy-ex1" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-numpy-ex1','output-numpy-ex1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-numpy-ex1')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-numpy-ex1','numpy-ex1')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-numpy-ex1"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 2</span>
+        <p>给定 $M = $ <code>np.arange(1,13).reshape(3,4)</code>，用布尔索引提取所有大于 5 的偶数。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-numpy-ex2" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-numpy-ex2','output-numpy-ex2')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-numpy-ex2')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-numpy-ex2','numpy-ex2')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-numpy-ex2"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 3</span>
+        <p>生成 1000 个标准正态分布随机数（<code>np.random.randn(1000)</code>），计算均值、标准差、中位数，验证是否接近 0、1、0。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-numpy-ex3" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-numpy-ex3','output-numpy-ex3')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-numpy-ex3')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-numpy-ex3','numpy-ex3')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-numpy-ex3"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">练习 4</span>
+        <p>给定 $A = \begin{bmatrix}1&2\\3&4\end{bmatrix}$，$B = \begin{bmatrix}5&6\\7&8\end{bmatrix}$，计算 $A^T B$、$\det(A)$、$A^{-1}$。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-numpy-ex4" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-numpy-ex4','output-numpy-ex4')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-numpy-ex4')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-numpy-ex4','numpy-ex4')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-numpy-ex4"></div>
+</section>
+
+<!-- ================================================================ -->
+<!-- ========== Section 4: Python 基础语法测试 ========== -->
+<!-- ================================================================ -->
+<section id="pytest" class="section">
+    <h2 class="section-title">Python 基础语法测试</h2>
+
+    <!-- 快速参考 -->
+    <h3 class="sub-title">4.1 快速参考</h3>
+
+    <div class="box box-def">
+        <span class="box-label">常用语法速查</span>
+        <table style="width:100%; font-size:.88rem; border-collapse:collapse;">
+            <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:4px 8px; font-weight:700;">变量与类型</td>
+                <td><code>x = 10; s = "hello"; lst = [1,2,3]; d = {"a": 1}</code></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:4px 8px; font-weight:700;">条件判断</td>
+                <td><code>if x > 0: ... elif x == 0: ... else: ...</code></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:4px 8px; font-weight:700;">循环</td>
+                <td><code>for i in range(n): ...</code> / <code>while cond: ...</code></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:4px 8px; font-weight:700;">函数</td>
+                <td><code>def f(x): return x**2</code></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:4px 8px; font-weight:700;">列表推导</td>
+                <td><code>[x**2 for x in range(10) if x % 2 == 0]</code></td>
+            </tr>
+            <tr>
+                <td style="padding:4px 8px; font-weight:700;">字符串格式</td>
+                <td><code>f"值={x:.2f}"</code> 或 <code>"值={:.2f}".format(x)</code></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-py-1" rows="18">
+# Python 基础语法快速回顾
+# 1. 变量与类型
+x = 10
+print(f"x = {x}, 类型: {type(x).__name__}")
+
+# 2. 列表操作
+lst = [3, 1, 4, 1, 5, 9, 2, 6]
+print(f"排序: {sorted(lst)}")
+print(f"去重: {list(set(lst))}")
+
+# 3. 字典
+d = {"数学": 95, "语文": 88, "英语": 92}
+for k, v in d.items():
+    print(f"  {k}: {v}分")
+
+# 4. 列表推导式
+evens = [x for x in range(1, 21) if x % 2 == 0]
+squares = [x**2 for x in range(1, 11)]
+print(f"1-20的偶数: {evens}")
+print(f"1-10的平方: {squares}")
+
+# 5. 函数
+def factorial(n):
+    result = 1
+    for i in range(1, n + 1):
+        result *= i
+    return result
+
+print(f"5! = {factorial(5)}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-py-1','output-py-1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-py-1')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-py-1"></div>
+
+    <hr>
+
+    <!-- 综合测试任务 -->
+    <h3 class="sub-title">4.2 综合测试：成绩分析程序</h3>
+
+    <div class="box box-exercise">
+        <span class="box-label">综合任务</span>
+        <p>完成一个<strong>成绩分析程序</strong>，综合运用变量、循环、条件、函数、字典、列表推导等核心语法。具体要求：</p>
+        <ol>
+            <li>定义一个字典 <code>students</code>，包含 5 个学生的姓名和 3 门课成绩（数学、语文、英语）</li>
+            <li>写函数 <code>average(scores)</code> 计算平均分</li>
+            <li>打印每个学生的平均分</li>
+            <li>找出每门课的最高分及对应学生</li>
+            <li>计算所有学生所有科目的总平均分</li>
+            <li>找出平均分最高的学生</li>
+        </ol>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-py-ex1" rows="8"># 成绩分析程序 — 请完成以上所有要求
+students = {
+    "张三": [85, 92, 78],
+    "李四": [90, 88, 95],
+    "王五": [76, 83, 91],
+    "赵六": [88, 79, 86],
+    "钱七": [92, 96, 89]
+}
+subjects = ["数学", "语文", "英语"]
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-py-ex1','output-py-ex1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-py-ex1')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-py-ex1','py-ex1')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-py-ex1"></div>
+
+    <hr>
+
+    <!-- 小测试 -->
+    <h3 class="sub-title">4.3 语法小测试</h3>
+
+    <div class="box box-exercise">
+        <span class="box-label">测试 1</span>
+        <p>写一个函数 <code>is_prime(n)</code> 判断 $n$ 是否为质数，然后打印 2 到 50 之间的所有质数。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-py-ex2" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-py-ex2','output-py-ex2')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-py-ex2')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-py-ex2','py-ex2')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-py-ex2"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">测试 2</span>
+        <p>用列表推导式生成 1 到 100 中所有<strong>既能被 3 整除又能被 5 整除</strong>的数的平方，并求和。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-py-ex3" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-py-ex3','output-py-ex3')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-py-ex3')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-py-ex3','py-ex3')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-py-ex3"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">测试 3</span>
+        <p>统计字符串 <code>"abracadabra"</code> 中每个字母出现的次数，用字典存储并打印，按次数从大到小排序。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-py-ex4" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-py-ex4','output-py-ex4')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-py-ex4')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-py-ex4','py-ex4')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-py-ex4"></div>
+
+    <div class="box box-exercise">
+        <span class="box-label">测试 4</span>
+        <p>用 NumPy 生成一个 $4 \times 4$ 的随机整数矩阵（1~9），判断它是否可逆（行列式不为 0），如果可逆则打印逆矩阵。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-py-ex5" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-py-ex5','output-py-ex5')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-py-ex5')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-py-ex5','py-ex5')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-py-ex5"></div>
+</section>
+
+<!-- ================================================================ -->
+<!-- ========== Section 5: Python 文件编辑器 ========== -->
+<!-- ================================================================ -->
+<section id="editor" class="section">
+    <h2 class="section-title">Python 文件编辑器</h2>
+
+    <div class="box box-tip">
+        <span class="box-label">使用说明</span>
+        <ul>
+            <li>输入文件名，编写代码后点击 <strong>保存</strong>，文件保存到 <code>code/</code> 目录</li>
+            <li>点击 <strong>运行</strong> 执行当前编辑器中的代码</li>
+            <li>右侧文件列表显示所有已保存的 <code>.py</code> 文件</li>
+            <li>点击 <strong>打开</strong> 加载文件到编辑器，点击 <strong>▶</strong> 直接运行文件</li>
+            <li>快捷键：<code>Tab</code> 缩进，<code>Ctrl+Enter</code> 运行，<code>Ctrl+S</code> 保存</li>
+        </ul>
+    </div>
+
+    <div class="editor-layout">
+        <!-- 编辑器主区域 -->
+        <div class="editor-main">
+            <div class="editor-filename-row">
+                <label for="editor-filename">文件名:</label>
+                <input type="text" id="editor-filename" class="editor-filename-input"
+                       placeholder="my_script" autocomplete="off" spellcheck="false">
+                <span class="editor-filename-suffix">.py</span>
+            </div>
+
+            <textarea class="editor-textarea" id="editor-code" spellcheck="false"># 在此编写 Python 代码
+# 保存后可在右侧文件列表中查看和再次打开
+
+print("Hello, Python!")
+</textarea>
+
+            <div class="editor-toolbar">
+                <button class="btn btn-new" onclick="editorNew()">新建</button>
+                <button class="btn btn-save" onclick="editorSave()">保存</button>
+                <button class="btn btn-editor-run" onclick="editorRun()">▶ 运行</button>
+                <span class="editor-status" id="editor-status"></span>
+            </div>
+
+            <div class="output-area" id="editor-output"></div>
+        </div>
+
+        <!-- 文件列表面板 -->
+        <div class="file-panel">
+            <div class="file-panel-header">📂 已保存文件</div>
+            <div class="file-panel-list" id="file-list">
+                <div class="file-panel-empty">暂无已保存文件</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== Footer ==================== -->
+<div style="text-align:center; color:var(--text-light); font-size:.82rem; padding:24px 0 36px; border-top:1px solid var(--border);">
+    高中数学竞赛 · Python 编程基础 &nbsp;|&nbsp; 代码由本地 Python 解释器执行
+</div>
+
+</div><!-- /main -->
+
+<!-- ==================== JavaScript ==================== -->
+<script>
+// ===== 答案代码（所有练习题的参考答案） =====
+const answers = {
+
+// --- 线性代数练习 ---
+"linalg-ex1": `import math
+
+a = [1, 2, 3, 4, 5]
+b = [5, 4, 3, 2, 1]
+
+# 点积
+dot = sum(a[i] * b[i] for i in range(len(a)))
+print(f"a · b = {dot}")
+
+# 模长
+norm_a = math.sqrt(sum(x**2 for x in a))
+norm_b = math.sqrt(sum(x**2 for x in b))
+print(f"|a| = {norm_a:.4f}")
+print(f"|b| = {norm_b:.4f}")
+
+# 夹角余弦
+cos_theta = dot / (norm_a * norm_b)
+print(f"cos(θ) = {cos_theta:.4f}")
+theta = math.acos(cos_theta)
+print(f"θ = {math.degrees(theta):.2f}°")`,
+
+"linalg-ex2": `def mat_mul(A, B):
+    """矩阵乘法：A(m×p) × B(p×n) = C(m×n)"""
+    m = len(A)
+    p = len(A[0])
+    n = len(B[0])
+    C = [[0] * n for _ in range(m)]
+    for i in range(m):
+        for j in range(n):
+            for k in range(p):
+                C[i][j] += A[i][k] * B[k][j]
+    return C
+
+A = [[1, 2, 3], [4, 5, 6]]
+B = [[7, 8], [9, 10], [11, 12]]
+
+C = mat_mul(A, B)
+print("A × B =")
+for row in C:
+    print(row)`,
+
+"linalg-ex3": `import numpy as np
+
+A = np.array([[1, 2, 3], [4, 5, 6]])
+B = np.array([[7, 8], [9, 10], [11, 12]])
+
+# 验证练习2的结果
+print("A @ B =")
+print(A @ B)
+
+# 计算 A^T 和 B^T 的乘积
+print("\\nA^T =")
+print(A.T)
+print("\\nB^T =")
+print(B.T)
+print("\\nA^T @ B^T =")
+print(A.T @ B.T)`,
+
+// --- 线性回归练习 ---
+"linreg-ex1": `import numpy as np
+
+X_raw = np.array([2, 4, 6, 8, 10])
+Y = np.array([3.5, 7.2, 10.8, 14.1, 18.3])
+
+# 构造设计矩阵
+X = np.column_stack([np.ones_like(X_raw), X_raw])
+
+# 正规方程求解
+beta = np.linalg.inv(X.T @ X) @ X.T @ Y
+b, w = beta
+
+print(f"截距 b = {b:.4f}")
+print(f"斜率 w = {w:.4f}")
+print(f"回归方程: y = {w:.4f}x + {b:.4f}")
+
+# 预测值
+Y_pred = X @ beta
+print(f"\\n预测值: {Y_pred.round(2)}")
+print(f"真实值: {Y}")`,
+
+"linreg-ex2": `import numpy as np
+
+X_raw = np.array([2, 4, 6, 8, 10])
+Y = np.array([3.5, 7.2, 10.8, 14.1, 18.3])
+
+X = np.column_stack([np.ones_like(X_raw), X_raw])
+beta = np.linalg.inv(X.T @ X) @ X.T @ Y
+Y_pred = X @ beta
+
+# 计算 R²
+SS_res = np.sum((Y - Y_pred) ** 2)
+SS_tot = np.sum((Y - np.mean(Y)) ** 2)
+R2 = 1 - SS_res / SS_tot
+
+print(f"SS_res = {SS_res:.4f}")
+print(f"SS_tot = {SS_tot:.4f}")
+print(f"R² = {R2:.6f}")
+print(f"拟合优度: {R2*100:.2f}%")
+if R2 > 0.95:
+    print("拟合效果: 优秀 ✓")
+elif R2 > 0.8:
+    print("拟合效果: 良好")
+else:
+    print("拟合效果: 一般，可能需要非线性模型")`,
+
+"linreg-ex3": `import numpy as np
+import matplotlib.pyplot as plt
+
+X_raw = np.array([2, 4, 6, 8, 10])
+Y = np.array([3.5, 7.2, 10.8, 14.1, 18.3])
+
+X = np.column_stack([np.ones_like(X_raw), X_raw])
+beta = np.linalg.inv(X.T @ X) @ X.T @ Y
+b, w = beta
+Y_pred = X @ beta
+
+# R²
+SS_res = np.sum((Y - Y_pred) ** 2)
+SS_tot = np.sum((Y - np.mean(Y)) ** 2)
+R2 = 1 - SS_res / SS_tot
+
+# 绘图
+plt.figure(figsize=(7, 4.5))
+plt.scatter(X_raw, Y, color='red', s=60, label='数据点', zorder=3)
+x_line = np.linspace(0, 12, 100)
+plt.plot(x_line, w * x_line + b, 'b-', linewidth=2,
+         label=f'y = {w:.2f}x + {b:.2f}')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title(f'线性回归 (R² = {R2:.4f})')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()`,
+
+"linreg-ex4": `# 手算正规方程（不使用 NumPy）
+# 数据点: (1,2), (2,3), (3,5)
+x = [1, 2, 3]
+y = [2, 3, 5]
+n = len(x)
+
+# 设计矩阵 X = [[1, x1], [1, x2], [1, x3]]
+# X^T X = [[n, sum(x)], [sum(x), sum(x^2)]]
+# X^T Y = [sum(y), sum(x*y)]
+
+sx = sum(x)
+sy = sum(y)
+sxx = sum(xi**2 for xi in x)
+sxy = sum(xi*yi for xi, yi in zip(x, y))
+
+print(f"X^T X = [[{n}, {sx}], [{sx}, {sxx}]]")
+print(f"X^T Y = [{sy}, {sxy}]")
+
+# 解 2×2 方程组: [[n, sx],[sx, sxx]] * [b, w] = [sy, sxy]
+# 用 Cramer 法则
+det = n * sxx - sx * sx
+b_val = (sxx * sy - sx * sxy) / det
+w_val = (n * sxy - sx * sy) / det
+
+print(f"\\ndet(X^T X) = {det}")
+print(f"截距 b = {b_val:.4f}")
+print(f"斜率 w = {w_val:.4f}")
+print(f"回归方程: y = {w_val:.4f}x + {b_val:.4f}")`,
+
+"linreg-ex5": `# 残差分析
+x = [1, 2, 3]
+y = [2, 3, 5]
+n = len(x)
+
+# 先算回归系数（与练习4相同）
+sx = sum(x)
+sy = sum(y)
+sxx = sum(xi**2 for xi in x)
+sxy = sum(xi*yi for xi, yi in zip(x, y))
+det = n * sxx - sx * sx
+b_val = (sxx * sy - sx * sxy) / det
+w_val = (n * sxy - sx * sy) / det
+
+print(f"回归方程: y = {w_val:.4f}x + {b_val:.4f}")
+
+# 计算残差
+residuals = []
+y_pred = []
+for xi, yi in zip(x, y):
+    yhat = w_val * xi + b_val
+    y_pred.append(yhat)
+    residuals.append(yi - yhat)
+
+print(f"\\n预测值: {[round(yp, 4) for yp in y_pred]}")
+print(f"真实值: {y}")
+print(f"残差:   {[round(e, 4) for e in residuals]}")
+
+# 验证性质 1: 残差之和 = 0
+sum_e = sum(residuals)
+print(f"\\n① 残差之和 Σe_i = {sum_e:.10f} ≈ 0 ✓")
+
+# 验证性质 2: 残差与预测值不相关
+sum_e_yhat = sum(e * yp for e, yp in zip(residuals, y_pred))
+print(f"② 残差·预测值 Σe_i·ŷ_i = {sum_e_yhat:.10f} ≈ 0 ✓")`,
+
+"linreg-ex6": `import numpy as np
+import matplotlib.pyplot as plt
+
+def check_centroid(X_raw, Y, label):
+    """验证回归线过重心"""
+    X = np.column_stack([np.ones_like(X_raw), X_raw])
+    beta = np.linalg.inv(X.T @ X) @ X.T @ Y
+    b, w = beta
+    x_mean = np.mean(X_raw)
+    y_mean = np.mean(Y)
+    y_at_mean = w * x_mean + b
+    print(f"[{label}]  重心({x_mean:.2f}, {y_mean:.2f}),  回归线在x̄处的值={y_at_mean:.6f},  差={abs(y_mean - y_at_mean):.2e} ≈ 0 ✓")
+
+# 三组数据验证
+print("=== 验证回归线过重心 ȳ = w·x̄ + b ===\\n")
+check_centroid(np.array([1,2,3,4,5]), np.array([2.1,3.9,6.2,7.8,10.1]), "数据集1")
+check_centroid(np.array([1,3,5,7,9]), np.array([10,8,6,4,2]), "数据集2")
+check_centroid(np.array([0,1,2,3]), np.array([1,1,2,3]), "数据集3")
+
+# 画数据集1的图
+X_raw = np.array([1,2,3,4,5])
+Y = np.array([2.1,3.9,6.2,7.8,10.1])
+X = np.column_stack([np.ones_like(X_raw), X_raw])
+beta = np.linalg.inv(X.T @ X) @ X.T @ Y
+b, w = beta
+x_mean, y_mean = np.mean(X_raw), np.mean(Y)
+
+plt.figure(figsize=(6, 4))
+plt.scatter(X_raw, Y, color='red', s=50, label='数据点', zorder=3)
+plt.scatter([x_mean], [y_mean], color='green', s=120, marker='*', zorder=4, label=f'重心({x_mean:.1f},{y_mean:.1f})')
+x_line = np.linspace(0, 6, 100)
+plt.plot(x_line, w*x_line+b, 'b-', label=f'y={w:.2f}x+{b:.2f}')
+plt.xlabel('x'); plt.ylabel('y')
+plt.title('回归线过重心'); plt.legend(); plt.grid(True, alpha=0.3)
+plt.tight_layout(); plt.show()`,
+
+"linreg-ex7": `import numpy as np
+
+# 原始数据
+X_raw = np.array([1, 2, 3, 4, 5])
+Y = np.array([2.1, 3.9, 6.2, 7.8, 10.1])
+
+# 原始回归
+X = np.column_stack([np.ones_like(X_raw), X_raw])
+beta = np.linalg.inv(X.T @ X) @ X.T @ Y
+b_orig, w_orig = beta
+print(f"原始回归: w = {w_orig:.6f}, b = {b_orig:.6f}")
+
+# 中心化数据: x' = x - x̄
+x_mean = np.mean(X_raw)
+X_centered = X_raw - x_mean
+print(f"\\nx̄ = {x_mean}")
+print(f"中心化后 x' = {X_centered}")
+
+# 中心化回归
+Xc = np.column_stack([np.ones_like(X_centered), X_centered])
+beta_c = np.linalg.inv(Xc.T @ Xc) @ Xc.T @ Y
+b_c, w_c = beta_c
+print(f"\\n中心化回归: w' = {w_c:.6f}, b' = {b_c:.6f}")
+
+# 对比
+print(f"\\n=== 对比 ===")
+print(f"斜率: w = {w_orig:.6f}, w' = {w_c:.6f}  →  w' = w ✓")
+print(f"截距: b = {b_orig:.6f}, ȳ = {np.mean(Y):.6f}, b' = {b_c:.6f}  →  b' = ȳ ✓")
+print(f"\\n💡 解释: 中心化后 x̄'=0，正规方程直接给出 b'=ȳ，")
+print(f"   斜率 w'=Σ(x_i-x̄)(y_i-ȳ)/Σ(x_i-x̄)² 简化计算。")
+print(f"   原截距可由 b = ȳ - w·x̄ 还原，无需再解方程组。")`,
+
+"linreg-ex8": `# 竞赛题1: 正规方程的代数推导与验证
+import numpy as np
+
+# ============================================================
+# (a) 推导过程（文字说明）
+# ============================================================
+print("=== (a) 推导 ===")
+print("X^T X = [[n, Σx_i], [Σx_i, Σx_i²]]")
+print("X^T Y = [Σy_i, Σx_i·y_i]")
+print("由 Cramer 法则解 X^T X · [b,w]^T = X^T Y:")
+print("  det = n·Σx_i² - (Σx_i)²")
+print("  w = [n·Σ(x_i·y_i) - Σx_i·Σy_i] / det")
+print("  b = [Σx_i²·Σy_i - Σx_i·Σ(x_i·y_i)] / det")
+print("  化简 b = ȳ - w·x̄  (将 Σx_i = n·x̄, Σy_i = n·ȳ 代入即得)")
+
+# ============================================================
+# (b) 手算过程
+# ============================================================
+x = [1, 2, 3, 4, 5]
+y = [2.1, 3.9, 6.2, 7.8, 10.1]
+n = len(x)
+
+sx = sum(x)
+sy = sum(y)
+sxx = sum(xi**2 for xi in x)
+sxy = sum(xi*yi for xi, yi in zip(x, y))
+
+print(f"\\n=== (b) 手算 ===")
+print(f"n={n}, Σx_i={sx}, Σy_i={sy}, Σx_i²={sxx}, Σx_iy_i={sxy}")
+det = n * sxx - sx**2
+print(f"det = {n}×{sxx} - {sx}² = {det}")
+
+w_hand = (n * sxy - sx * sy) / det
+b_hand = sy / n - w_hand * sx / n  # 用 b = ȳ - w·x̄
+
+print(f"\\nw = ({n}×{sxy} - {sx}×{sy}) / {det}")
+print(f"  = {n*sxy - sx*sy} / {det}")
+print(f"  = {w_hand:.4f}")
+print(f"\\nb = ȳ - w·x̄ = {sy/n:.4f} - {w_hand:.4f}×{sx/n:.4f}")
+print(f"  = {b_hand:.4f}")
+
+# ============================================================
+# (c) NumPy 验证
+# ============================================================
+X = np.column_stack([np.ones(n), x])
+beta = np.linalg.inv(X.T @ X) @ X.T @ np.array(y)
+b_np, w_np = beta
+
+print(f"\\n=== (c) NumPy 验证 ===")
+print(f"NumPy:  w = {w_np:.6f}, b = {b_np:.6f}")
+print(f"手算:   w = {w_hand:.6f}, b = {b_hand:.6f}")
+print(f"误差:   Δw = {abs(w_np - w_hand):.2e}, Δb = {abs(b_np - b_hand):.2e}")
+print(f"\\n✅ 手算结果与 NumPy 一致！")`,
+
+"linreg-ex9": `# 竞赛题2: 过原点模型与模型选择
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.array([2, 4, 6, 8, 10])
+y = np.array([4.1, 8.3, 11.8, 16.2, 20.1])
+
+# ============================================================
+# (a) 推导: 过原点模型 y = kx
+# L(k) = Σ(y_i - k·x_i)²
+# dL/dk = -2·Σx_i(y_i - k·x_i) = 0
+# → k·Σx_i² = Σx_i·y_i
+# → k = Σx_i·y_i / Σx_i²
+# ============================================================
+print("=== (a) 推导 ===")
+print("最小化 L(k) = Σ(y_i - kx_i)²")
+print("dL/dk = -2·Σx_i(y_i - kx_i) = 0")
+print("→ k = Σ(x_i·y_i) / Σx_i²")
+
+# ============================================================
+# (b) 计算弹性系数 k
+# ============================================================
+k = np.sum(x * y) / np.sum(x**2)
+print(f"\\n=== (b) 计算 k ===")
+print(f"Σx_iy_i = {np.sum(x*y):.2f}")
+print(f"Σx_i²   = {np.sum(x**2):.2f}")
+print(f"k = {k:.4f} N/cm")
+
+# ============================================================
+# (c) 标准 y = wx + b 回归
+# ============================================================
+X = np.column_stack([np.ones_like(x), x])
+beta = np.linalg.inv(X.T @ X) @ X.T @ y
+b_std, w_std = beta
+
+# 残差平方和
+y_pred_origin = k * x
+y_pred_std = w_std * x + b_std
+RSS_origin = np.sum((y - y_pred_origin)**2)
+RSS_std = np.sum((y - y_pred_std)**2)
+
+print(f"\\n=== (c) 两模型对比 ===")
+print(f"过原点模型: y = {k:.4f}x,   RSS = {RSS_origin:.4f}")
+print(f"标准回归:   y = {w_std:.4f}x + {b_std:.4f},  RSS = {RSS_std:.4f}")
+print(f"RSS 差值:   {RSS_origin - RSS_std:.4f} (标准回归更小)")
+
+# ============================================================
+# (d) 绘图对比与结论
+# ============================================================
+plt.figure(figsize=(7, 4.5))
+plt.scatter(x, y, color='red', s=60, label='实验数据', zorder=3)
+x_line = np.linspace(0, 12, 100)
+plt.plot(x_line, k*x_line, 'b-', linewidth=2,
+         label=f'过原点: y={k:.2f}x (RSS={RSS_origin:.2f})')
+plt.plot(x_line, w_std*x_line+b_std, 'g--', linewidth=2,
+         label=f'标准: y={w_std:.2f}x+{b_std:.2f} (RSS={RSS_std:.2f})')
+plt.xlabel('伸长量 x (cm)'); plt.ylabel('弹力 y (N)')
+plt.title('胡克定律拟合对比'); plt.legend(); plt.grid(True, alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print(f"\\n=== (d) 结论 ===")
+print(f"截距 b = {b_std:.4f}，接近0，说明数据确实近似过原点。")
+print(f"两模型 RSS 差值仅 {RSS_origin-RSS_std:.4f}，非常接近。")
+print(f"物理上胡克定律要求 y=kx（过原点），且 b≈0，")
+print(f"因此过原点模型更合理——既符合物理定律，又仅用1个参数。")`,
+
+// --- NumPy 练习 ---
+"numpy-ex1": `import numpy as np
+
+M = np.arange(1, 26).reshape(5, 5)
+print("5×5 矩阵:")
+print(M)
+print(f"\\n主对角线: {np.diag(M)}")
+print(f"迹 (对角线之和): {np.trace(M)}")`,
+
+"numpy-ex2": `import numpy as np
+
+M = np.arange(1, 13).reshape(3, 4)
+print("矩阵 M:")
+print(M)
+
+# 大于5的偶数
+mask = (M > 5) & (M % 2 == 0)
+result = M[mask]
+print(f"\\n大于5的偶数: {result}")`,
+
+"numpy-ex3": `import numpy as np
+
+np.random.seed(42)
+data = np.random.randn(1000)
+
+mean = np.mean(data)
+std = np.std(data)
+median = np.median(data)
+
+print(f"样本量: 1000")
+print(f"均值:   {mean:.4f}  (理论值 0)")
+print(f"标准差: {std:.4f}  (理论值 1)")
+print(f"中位数: {median:.4f}  (理论值 0)")
+print(f"\\n结论: 样本统计量接近理论值，符合正态分布特征 ✓")`,
+
+"numpy-ex4": `import numpy as np
+
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[5, 6], [7, 8]])
+
+# A^T @ B
+print("A^T @ B =")
+print(A.T @ B)
+
+# 行列式
+det_A = np.linalg.det(A)
+print(f"\\ndet(A) = {det_A:.1f}")
+
+# 逆矩阵
+print("\\nA^(-1) =")
+print(np.linalg.inv(A))
+
+# 验证 A @ A^(-1) = I
+print("\\n验证 A @ A^(-1) =")
+print(np.round(A @ np.linalg.inv(A)))`,
+
+// --- Python 测试 ---
+"py-ex1": `# 成绩分析程序
+students = {
+    "张三": [85, 92, 78],
+    "李四": [90, 88, 95],
+    "王五": [76, 83, 91],
+    "赵六": [88, 79, 86],
+    "钱七": [92, 96, 89]
+}
+subjects = ["数学", "语文", "英语"]
+
+# 1. 计算平均分的函数
+def average(scores):
+    return sum(scores) / len(scores)
+
+# 2. 打印每个学生的平均分
+print("=== 各学生平均分 ===")
+for name, scores in students.items():
+    avg = average(scores)
+    print(f"  {name}: {avg:.2f}分")
+
+# 3. 每门课最高分
+print("\\n=== 各科最高分 ===")
+for j, subj in enumerate(subjects):
+    max_score = 0
+    max_student = ""
+    for name, scores in students.items():
+        if scores[j] > max_score:
+            max_score = scores[j]
+            max_student = name
+    print(f"  {subj}: {max_student} ({max_score}分)")
+
+# 4. 总平均分
+all_scores = [s for scores in students.values() for s in scores]
+overall = average(all_scores)
+print(f"\\n=== 总平均分: {overall:.2f} ===")
+
+# 5. 平均分最高的学生
+best = max(students.items(), key=lambda x: average(x[1]))
+print(f"\\n=== 最佳学生: {best[0]} (平均{average(best[1]):.2f}分) ===")`,
+
+"py-ex2": `def is_prime(n):
+    """判断n是否为质数"""
+    if n < 2:
+        return False
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+# 打印2到50的所有质数
+primes = [n for n in range(2, 51) if is_prime(n)]
+print(f"2~50的质数 ({len(primes)}个):")
+print(primes)`,
+
+"py-ex3": `# 既能被3整除又能被5整除 → 能被15整除
+nums = [x**2 for x in range(1, 101) if x % 15 == 0]
+total = sum(nums)
+
+print(f"满足条件的数: {[x for x in range(1, 101) if x % 15 == 0]}")
+print(f"它们的平方: {nums}")
+print(f"平方和: {total}")`,
+
+"py-ex4": `s = "abracadabra"
+
+# 统计每个字母出现次数
+count = {}
+for ch in s:
+    count[ch] = count.get(ch, 0) + 1
+
+# 按次数从大到小排序
+sorted_count = sorted(count.items(), key=lambda x: x[1], reverse=True)
+
+print("字母频率统计:")
+for ch, cnt in sorted_count:
+    bar = "█" * cnt
+    print(f"  '{ch}': {cnt} {bar}")`,
+
+"py-ex5": `import numpy as np
+
+np.random.seed(7)
+M = np.random.randint(1, 10, (4, 4))
+print("随机矩阵 M:")
+print(M)
+
+det = np.linalg.det(M)
+print(f"\\n行列式 det(M) = {det:.2f}")
+
+if abs(det) > 1e-10:
+    print("矩阵可逆！逆矩阵为:")
+    inv_M = np.linalg.inv(M)
+    print(np.round(inv_M, 4))
+    # 验证
+    print("\\n验证 M @ M^(-1) ≈ I:")
+    print(np.round(M @ inv_M, 6))
+else:
+    print("矩阵不可逆（行列式为0）")`,
+};
+
+
+// ===== 代码运行 =====
+async function runCode(textareaId, outputId) {
+    const code = document.getElementById(textareaId).value;
+    const outputEl = document.getElementById(outputId);
+
+    outputEl.innerHTML = '<div class="running">运行中...</div>';
+
+    try {
+        const res = await fetch('/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        });
+        const data = await res.json();
+        renderOutput(outputEl, data);
+    } catch (err) {
+        outputEl.innerHTML = `<span class="stderr">连接失败: ${err.message}\n请确保后端服务器已启动 (运行 start.bat)</span>`;
+    }
+}
+
+function renderOutput(el, data) {
+    let html = '';
+    const stdout = data.stdout || '';
+    const stderr = data.stderr || '';
+
+    // 解析 matplotlib 图片 (base64)
+    const imgRegex = /__IMG_(\d+)__([\s\S]*?)__END_IMG__/g;
+    let match;
+    let textParts = [];
+    let lastIdx = 0;
+
+    while ((match = imgRegex.exec(stdout)) !== null) {
+        // 图片之前的文本
+        if (match.index > lastIdx) {
+            textParts.push({ type: 'text', content: stdout.slice(lastIdx, match.index) });
+        }
+        textParts.push({ type: 'img', content: match[2].trim() });
+        lastIdx = match.index + match[0].length;
+    }
+    if (lastIdx < stdout.length) {
+        textParts.push({ type: 'text', content: stdout.slice(lastIdx) });
+    }
+
+    // 渲染
+    for (const part of textParts) {
+        if (part.type === 'img') {
+            html += `<img class="plot-image" src="data:image/png;base64,${part.content}" alt="plot">`;
+        } else if (part.content.trim()) {
+            html += `<span class="stdout">${escapeHtml(part.content)}</span>`;
+        }
+    }
+
+    if (stderr) {
+        html += `<span class="stderr">${escapeHtml(stderr)}</span>`;
+    }
+
+    if (!html) {
+        html = '<span class="empty">（无输出）</span>';
+    }
+
+    el.innerHTML = html;
+}
+
+function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+}
+
+function clearOutput(outputId) {
+    document.getElementById(outputId).innerHTML = '';
+}
+
+// ===== 显示答案 =====
+function showAnswer(textareaId, answerKey) {
+    const textarea = document.getElementById(textareaId);
+    if (answers[answerKey]) {
+        textarea.value = answers[answerKey];
+        // 触发输入事件，确保状态更新
+        textarea.dispatchEvent(new Event('input'));
+    }
+}
+
+// ===== Tab 键支持 =====
+document.addEventListener('keydown', function(e) {
+    const isCodeArea = e.target.classList.contains('code-textarea') || e.target.classList.contains('editor-textarea');
+    if (e.key === 'Tab' && isCodeArea) {
+        e.preventDefault();
+        const ta = e.target;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        ta.value = ta.value.substring(0, start) + '    ' + ta.value.substring(end);
+        ta.selectionStart = ta.selectionEnd = start + 4;
+    }
+    // Ctrl+Enter 运行代码
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && isCodeArea) {
+        e.preventDefault();
+        if (e.target.classList.contains('editor-textarea')) {
+            editorRun();
+        } else {
+            const toolbar = e.target.nextElementSibling;
+            const runBtn = toolbar.querySelector('.btn-run');
+            if (runBtn) runBtn.click();
+        }
+    }
+});
+
+
+// ===== 导航高亮 =====
+const navLinks = document.querySelectorAll('.nav a');
+const sections = document.querySelectorAll('.section');
+
+function updateNav() {
+    let current = '';
+    for (const sec of sections) {
+        if (window.scrollY >= sec.offsetTop - 100) {
+            current = sec.id;
+        }
+    }
+    navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+    });
+}
+window.addEventListener('scroll', updateNav);
+updateNav();
+
+// ===== Python 文件编辑器 =====
+const editorCode = document.getElementById('editor-code');
+const editorFilename = document.getElementById('editor-filename');
+const editorOutput = document.getElementById('editor-output');
+const editorStatus = document.getElementById('editor-status');
+
+function setEditorStatus(msg, isError) {
+    editorStatus.textContent = msg;
+    editorStatus.style.color = isError ? 'var(--danger)' : 'var(--success)';
+    if (msg) {
+        clearTimeout(editorStatus._timer);
+        editorStatus._timer = setTimeout(() => { editorStatus.textContent = ''; }, 3000);
+    }
+}
+
+function showToast(msg, isError) {
+    const el = document.createElement('div');
+    el.className = 'toast ' + (isError ? 'toast-error' : 'toast-success');
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+}
+
+function editorNew() {
+    editorFilename.value = '';
+    editorCode.value = '# 在此编写 Python 代码\n\n';
+    editorOutput.innerHTML = '';
+    editorFilename.focus();
+    setEditorStatus('新建文件');
+}
+
+async function editorSave() {
+    const filename = editorFilename.value.trim();
+    const code = editorCode.value;
+    if (!filename) {
+        showToast('请输入文件名', true);
+        editorFilename.focus();
+        return;
+    }
+    try {
+        const res = await fetch('/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename, code })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            showToast('已保存: ' + data.filename, false);
+            setEditorStatus('已保存');
+            refreshFileList();
+        } else {
+            showToast(data.error || '保存失败', true);
+        }
+    } catch (err) {
+        showToast('保存失败: ' + err.message, true);
+    }
+}
+
+async function editorRun() {
+    const code = editorCode.value;
+    if (!code.trim()) {
+        editorOutput.innerHTML = '<span class="stderr">（代码为空）</span>';
+        return;
+    }
+    editorOutput.innerHTML = '<div class="running">运行中...</div>';
+    try {
+        const res = await fetch('/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        });
+        const data = await res.json();
+        renderOutput(editorOutput, data);
+    } catch (err) {
+        editorOutput.innerHTML = '<span class="stderr">连接失败: ' + escapeHtml(err.message) + '</span>';
+    }
+}
+
+async function editorOpen(name) {
+    try {
+        const res = await fetch('/files/' + encodeURIComponent(name));
+        const data = await res.json();
+        if (data.error) {
+            showToast(data.error, true);
+            return;
+        }
+        // 去掉 .py 后缀填入文件名输入框
+        editorFilename.value = data.name.replace(/\.py$/, '');
+        editorCode.value = data.code;
+        editorOutput.innerHTML = '';
+        setEditorStatus('已打开: ' + data.name);
+    } catch (err) {
+        showToast('打开失败: ' + err.message, true);
+    }
+}
+
+async function editorRunFile(name) {
+    editorOutput.innerHTML = '<div class="running">运行 ' + escapeHtml(name) + ' ...</div>';
+    try {
+        const res = await fetch('/run-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: name })
+        });
+        const data = await res.json();
+        renderOutput(editorOutput, data);
+    } catch (err) {
+        editorOutput.innerHTML = '<span class="stderr">运行失败: ' + escapeHtml(err.message) + '</span>';
+    }
+}
+
+async function editorDelete(name) {
+    if (!confirm('确定删除 ' + name + ' 吗？')) return;
+    try {
+        const res = await fetch('/files/' + encodeURIComponent(name), { method: 'DELETE' });
+        const data = await res.json();
+        if (data.ok) {
+            showToast('已删除: ' + name, false);
+            // 如果当前编辑的就是这个文件，清空编辑器
+            if (editorFilename.value.trim() + '.py' === name) {
+                editorNew();
+            }
+            refreshFileList();
+        } else {
+            showToast(data.error || '删除失败', true);
+        }
+    } catch (err) {
+        showToast('删除失败: ' + err.message, true);
+    }
+}
+
+async function refreshFileList() {
+    const listEl = document.getElementById('file-list');
+    try {
+        const res = await fetch('/files');
+        const files = await res.json();
+        if (!files.length) {
+            listEl.innerHTML = '<div class="file-panel-empty">暂无已保存文件</div>';
+            return;
+        }
+        listEl.innerHTML = files.map(f => `
+            <div class="file-item">
+                <div class="file-item-name">${escapeHtml(f.name)}</div>
+                <div class="file-item-time">${escapeHtml(f.modified)}</div>
+                <div class="file-item-actions">
+                    <button class="btn btn-open" onclick="editorOpen('${escapeHtml(f.name)}')">打开</button>
+                    <button class="btn btn-file-run" onclick="editorRunFile('${escapeHtml(f.name)}')">▶ 运行</button>
+                    <button class="btn btn-del" onclick="editorDelete('${escapeHtml(f.name)}')">删除</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        listEl.innerHTML = '<div class="file-panel-empty">加载失败</div>';
+    }
+}
+
+// Ctrl+S 保存快捷键
+document.addEventListener('keydown', function(e) {
+    if (e.key === 's' && (e.ctrlKey || e.metaKey) && e.target === editorCode) {
+        e.preventDefault();
+        editorSave();
+    }
+});
+
+// 页面加载时刷新文件列表
+refreshFileList();
+</script>
+
+</body>
+</html>
