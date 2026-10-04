@@ -285,7 +285,7 @@
 <!-- ==================== Header ==================== -->
 <div class="header">
     <h1>高中数学竞赛 · Python 编程基础</h1>
-    <p class="subtitle">线性代数 · 线性回归 · 多元线性回归 · 多项式回归 · NumPy · Python 语法测试</p>
+    <p class="subtitle">线性代数 · 线性回归 · 多元线性回归 · 多项式回归 · 综合评价模型 · NumPy · Python 语法测试</p>
 </div>
 
 <!-- ==================== Navigation ==================== -->
@@ -295,6 +295,7 @@
     <a href="#linreg">线性回归</a>
     <a href="#multireg">多元线性回归</a>
     <a href="#polyreg">多项式回归</a>
+    <a href="#evalmodel">综合评价模型</a>
     <a href="#numpy">NumPy</a>
     <a href="#pytest">Python 测试</a>
     <a href="#editor">编辑器</a>
@@ -2038,6 +2039,1003 @@ plt.legend(fontsize=9); plt.grid(True, alpha=0.3); plt.tight_layout(); plt.show(
 </section>
 
 <!-- ================================================================ -->
+<!-- ========== Section 5: 综合评价模型 ========== -->
+<!-- ================================================================ -->
+<section id="evalmodel" class="section">
+    <h2 class="section-title">综合评价模型</h2>
+
+    <!-- 5.1 数学预备 -->
+    <h3 class="sub-title">5.1 数学预备：图论基础与信息熵</h3>
+
+    <div class="box box-def">
+        <span class="box-label">为什么需要补充这些数学</span>
+        <p>综合评价模型涉及两类核心数学工具：</p>
+        <ul>
+            <li><strong>图论</strong>——层次分析法 (AHP) 的结构基础是<strong>有向无环图</strong> (DAG)，理解层次结构才能正确构造判断矩阵；</li>
+            <li><strong>信息熵</strong>——熵权法的理论基础来自 Shannon 信息论，理解熵的含义才能正确解释权重结果。</li>
+        </ul>
+        <p>本节先建立这些数学基础，后续各评价方法将直接使用。</p>
+    </div>
+
+    <div class="box box-def">
+        <span class="box-label">有向图与邻接矩阵</span>
+        <p>一个<strong>有向图</strong> $G = (V, E)$ 由顶点集 $V$ 和有向边集 $E \subseteq V \times V$ 组成。有向边 $(u, v)$ 表示从 $u$ 指向 $v$ 的箭头。</p>
+        <p>有向图可以用<strong>邻接矩阵</strong> $A$ 表示：</p>
+        $$A_{ij} = \begin{cases} 1, & \text{若存在边 } (v_i, v_j) \\ 0, & \text{否则} \end{cases}$$
+    </div>
+
+    <div class="box box-def">
+        <span class="box-label">有向无环图 (DAG) 与层次结构</span>
+        <p>若有向图中<strong>不存在任何回路</strong>（即无法从某个顶点出发沿有向边回到自身），则称为<strong>有向无环图</strong> (DAG, Directed Acyclic Graph)。</p>
+        <p><strong>层次结构</strong>是一种特殊的 DAG：顶点被分为若干层，有向边只从上层指向相邻下层，不存在跨层或同层边。AHP 的决策框架就是一个三层层次结构：</p>
+        <ul>
+            <li><strong>目标层</strong>（顶层 1 个节点）：如"选择最佳项目"</li>
+            <li><strong>准则层</strong>（中间层 $m$ 个节点）：如"师资、经费、就业率、学费"</li>
+            <li><strong>方案层</strong>（底层 $n$ 个节点）：如"项目 A ~ E"</li>
+        </ul>
+        <p>DAG 的无环性保证了权重可以<strong>逐层传递</strong>而不产生循环依赖——这是 AHP 能计算出唯一综合权重的数学前提。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-1" rows="28">
+import numpy as np
+
+# 层次结构的邻接矩阵表示 (AHP 三层结构示例)
+# 顶点: G(目标), C1~C4(准则), A1~A3(方案)
+# 邻接矩阵 A[i][j]=1 表示从顶点i到顶点j有边
+labels = ['G', 'C1', 'C2', 'C3', 'C4', 'A1', 'A2', 'A3']
+A = np.array([
+    # G  C1 C2 C3 C4 A1 A2 A3
+    [0,  1, 1, 1, 1, 0, 0, 0],  # G → 四个准则
+    [0,  0, 0, 0, 0, 1, 1, 1],  # C1 → 三个方案
+    [0,  0, 0, 0, 0, 1, 1, 1],  # C2 → 三个方案
+    [0,  0, 0, 0, 0, 1, 1, 1],  # C3 → 三个方案
+    [0,  0, 0, 0, 0, 1, 1, 1],  # C4 → 三个方案
+    [0,  0, 0, 0, 0, 0, 0, 0],  # A1 无出边 (底层)
+    [0,  0, 0, 0, 0, 0, 0, 0],  # A2 无出边
+    [0,  0, 0, 0, 0, 0, 0, 0],  # A3 无出边
+])
+
+print("邻接矩阵 A:")
+print(A)
+print(f"\n边数 = {A.sum():.0f}")
+
+# 验证 DAG: 无环 ⟺ A^k 的对角线全为 0 (对所有 k)
+n = A.shape[0]
+is_dag = True
+Ak = A.copy()
+for k in range(1, n):
+    if np.any(np.diag(Ak) > 0):
+        is_dag = False
+        break
+    Ak = Ak @ A
+print(f"是否为 DAG: {'是 ✓' if is_dag else '否 ✗'}")
+
+# 层次结构: 各节点的入度(被多少上层节点指向)
+in_degree = A.sum(axis=0).astype(int)
+print(f"\n各节点入度: {dict(zip(labels, in_degree))}")
+print("入度=0 → 目标层(G), 入度=1 → 准则层(C), 入度>1 → 方案层(A)")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-1','output-eval-1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-1')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-1"></div>
+
+    <div class="box box-def">
+        <span class="box-label">Shannon 信息熵</span>
+        <p>给定离散随机变量的概率分布 $p = (p_1, p_2, \ldots, p_n)$（$\sum p_i = 1$，$p_i \geq 0$），其<strong>信息熵</strong>为：</p>
+        $$H(p) = -\sum_{i=1}^{n} p_i \log p_i$$
+        <p>信息熵度量分布的"不确定性"：</p>
+        <ul>
+            <li>当某个 $p_i = 1$（其余为 0），$H = 0$——完全确定，无不确定性；</li>
+            <li>当所有 $p_i = 1/n$（均匀分布），$H = \log n$——最大不确定性。</li>
+        </ul>
+        <p>在综合评价中，我们将各方案的指标值视为一种"分布"，熵越大说明该指标区分度越低。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-2" rows="20">
+import numpy as np
+
+# 信息熵的直观演示
+n = 5
+k = 1.0 / np.log(n)  # 归一化常数, 使 e ∈ [0, 1]
+
+# 三种分布: 集中 / 均匀 / 中等
+distributions = {
+    '集中 (一个=1, 其余=0)': np.array([1, 0, 0, 0, 0], dtype=float),
+    '均匀 (全部相等)':       np.array([1, 1, 1, 1, 1], dtype=float),
+    '中等差异':             np.array([5, 3, 2, 1, 1], dtype=float),
+}
+
+for name, x in distributions.items():
+    p = x / x.sum()
+    # 避免 log(0), 0*log(0) 规定为 0
+    e = -k * np.sum(np.where(p > 0, p * np.log(p), 0))
+    print(f"{name}:")
+    print(f"  p = {np.round(p, 3)}")
+    print(f"  信息熵 e = {e:.4f}  (0=完全确定, 1=完全均匀)\n")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-2','output-eval-2')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-2')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-2"></div>
+
+    <!-- 5.2 问题引入 -->
+    <h3 class="sub-title">5.2 问题引入</h3>
+
+    <div class="box box-def">
+        <span class="box-label">什么是综合评价</span>
+        <p>现实中经常需要从<strong>多个指标</strong>对若干方案进行排序和择优：选研究生项目要看师资、经费、就业率、学费；选供应商要看价格、质量、交货期、信誉。每个指标的重要性不同，且指标之间的量纲和方向（越大越好 vs 越小越好）也可能不同。</p>
+        <p><strong>综合评价模型</strong>解决的核心问题是：如何把多个指标的信息合理地"综合"成一个最终评分，从而对方案排序。</p>
+    </div>
+
+    <div class="box box-tip">
+        <span class="box-label">竞赛中的综合评价</span>
+        <p>数学建模竞赛中，综合评价类题目出现频率极高（如 CUMCM 近年真题）。掌握熵权法、CRITIC 法、AHP、TOPSIS 四大方法，并能灵活组合，是解决此类问题的"标配"。</p>
+    </div>
+
+    <div class="box box-def">
+        <span class="box-label">本章运行案例</span>
+        <p>5 个研究生项目，4 个评价指标：</p>
+        <ul>
+            <li>师资力量（效益型，越大越好）</li>
+            <li>科研经费/万元（效益型）</li>
+            <li>就业率/%（效益型）</li>
+            <li>学费/万元（成本型，越小越好）</li>
+        </ul>
+        <p>数据见下方代码。本章所有方法将统一使用此案例，方便对比各方法的结果差异。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-3" rows="22">
+import numpy as np
+
+# 5个研究生项目的原始数据
+names = ['项目A', '项目B', '项目C', '项目D', '项目E']
+criteria = ['师资力量', '科研经费(万)', '就业率(%)', '学费(万)']
+
+data = np.array([
+    [85, 600, 92, 3.5],  # 项目A
+    [70, 800, 88, 2.8],  # 项目B
+    [90, 400, 95, 4.0],  # 项目C
+    [65, 700, 80, 2.5],  # 项目D
+    [80, 500, 90, 3.2],  # 项目E
+])
+
+# 指标类型: 1=效益型(越大越好), -1=成本型(越小越好)
+indicator_types = [1, 1, 1, -1]
+
+print("原始数据矩阵:")
+print(f"{'':>6}", end='')
+for c in criteria:
+    print(f"{c:>14}", end='')
+print()
+for i, name in enumerate(names):
+    print(f"{name:>6}", end='')
+    for j in range(len(criteria)):
+        print(f"{data[i,j]:>14.1f}", end='')
+    print()
+
+print(f"\n指标方向: {[('效益型↑' if t==1 else '成本型↓') for t in indicator_types]}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-3','output-eval-3')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-3')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-3"></div>
+
+    <!-- 5.3 指标预处理 -->
+    <h3 class="sub-title">5.3 指标预处理：正向化与标准化</h3>
+
+    <div class="box box-formula">
+        <span class="box-label">极差标准化（正向化）</span>
+        <p>综合评价的第一步是将所有指标统一为<strong>越大越好</strong>的方向，并映射到 $[0,1]$ 区间。</p>
+        <p><strong>效益型指标</strong>（越大越好）：</p>
+        $$x'_{ij} = \frac{x_{ij} - \min_j}{\max_j - \min_j}$$
+        <p><strong>成本型指标</strong>（越小越好）：</p>
+        $$x'_{ij} = \frac{\max_j - x_{ij}}{\max_j - \min_j}$$
+        <p>其中 $\max_j = \max_i x_{ij}$，$\min_j = \min_i x_{ij}$ 为第 $j$ 列的极值。标准化后最优值为 1，最差值为 0。</p>
+    </div>
+
+    <div class="box box-warn">
+        <span class="box-label">注意</span>
+        <p>标准化方法不唯一！除极差标准化外，还有<strong>Z-score 标准化</strong>（$z = (x-\mu)/\sigma$）等。不同标准化方法会影响熵权法和 CRITIC 法的结果。本节统一使用极差标准化。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-4" rows="30">
+import numpy as np
+
+# 原始数据
+data = np.array([
+    [85, 600, 92, 3.5],
+    [70, 800, 88, 2.8],
+    [90, 400, 95, 4.0],
+    [65, 700, 80, 2.5],
+    [80, 500, 90, 3.2],
+])
+indicator_types = [1, 1, 1, -1]
+names = ['项目A', '项目B', '项目C', '项目D', '项目E']
+criteria = ['师资力量', '科研经费', '就业率', '学费']
+
+n, m = data.shape
+data_norm = np.zeros_like(data, dtype=float)
+
+for j in range(m):
+    col = data[:, j]
+    x_min, x_max = col.min(), col.max()
+    if indicator_types[j] == 1:   # 效益型
+        data_norm[:, j] = (col - x_min) / (x_max - x_min)
+    else:                         # 成本型
+        data_norm[:, j] = (x_max - col) / (x_max - x_min)
+
+print("极差标准化后 (所有指标已正向化, 值域 [0, 1]):")
+print(f"{'':>6}", end='')
+for c in criteria:
+    print(f"{c:>10}", end='')
+print()
+for i, name in enumerate(names):
+    print(f"{name:>6}", end='')
+    for j in range(m):
+        print(f"{data_norm[i,j]:>10.4f}", end='')
+    print()
+
+# 验证: 每列最大值为1, 最小值为0
+print(f"\n每列最大值: {data_norm.max(axis=0).round(4)}")
+print(f"每列最小值: {data_norm.min(axis=0).round(4)}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-4','output-eval-4')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-4')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-4"></div>
+
+    <!-- 5.4 熵权法 -->
+    <h3 class="sub-title">5.4 熵权法：客观赋权</h3>
+
+    <div class="box box-def">
+        <span class="box-label">核心思想</span>
+        <p>信息熵衡量数据的"混乱程度"。某指标的数据分布越均匀（信息熵越大），说明该指标区分度越低，应赋予<strong>较小权重</strong>；反之，数据差异越大（熵越小），该指标提供的信息量越大，应赋予<strong>较大权重</strong>。</p>
+    </div>
+
+    <div class="box box-formula">
+        <span class="box-label">计算步骤</span>
+        <p><strong>步骤 1</strong>：计算第 $j$ 个指标下第 $i$ 个方案的比重：</p>
+        $$p_{ij} = \frac{x'_{ij}}{\sum_{i=1}^{n} x'_{ij}}$$
+        <p><strong>步骤 2</strong>：计算信息熵：</p>
+        $$e_j = -k \sum_{i=1}^{n} p_{ij} \ln p_{ij}, \quad k = \frac{1}{\ln n}$$
+        <p>常数 $k = 1/\ln n$ 保证 $e_j \in [0, 1]$。</p>
+        <p><strong>步骤 3</strong>：计算权重（信息效用值 $d_j = 1 - e_j$，归一化）：</p>
+        $$w_j = \frac{d_j}{\sum_{j=1}^{m} d_j} = \frac{1 - e_j}{\sum_{j=1}^{m}(1 - e_j)}$$
+    </div>
+
+    <div class="box box-tip">
+        <span class="box-label">直觉理解</span>
+        <p>若某指标所有方案的值相同，则 $e_j = 1$，$d_j = 0$，$w_j = 0$——完全无区分力的指标不应参与评价。若数据极度不均匀，$e_j \to 0$，$d_j \to 1$，权重最大。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-5" rows="40">
+import numpy as np
+
+# 完整流程: 原始数据 → 标准化 → 熵权法
+data = np.array([
+    [85, 600, 92, 3.5],
+    [70, 800, 88, 2.8],
+    [90, 400, 95, 4.0],
+    [65, 700, 80, 2.5],
+    [80, 500, 90, 3.2],
+])
+indicator_types = [1, 1, 1, -1]
+criteria = ['师资力量', '科研经费', '就业率', '学费']
+names = ['项目A', '项目B', '项目C', '项目D', '项目E']
+n, m = data.shape
+
+# 极差标准化
+data_norm = np.zeros_like(data, dtype=float)
+for j in range(m):
+    col = data[:, j]
+    if indicator_types[j] == 1:
+        data_norm[:, j] = (col - col.min()) / (col.max() - col.min())
+    else:
+        data_norm[:, j] = (col.max() - col) / (col.max() - col.min())
+
+# 为避免 log(0)，微小平移
+data_norm = data_norm + 1e-10
+
+# 步骤1: 比重 p_ij
+p = data_norm / data_norm.sum(axis=0, keepdims=True)
+
+# 步骤2: 信息熵 e_j
+k = 1.0 / np.log(n)
+e = -k * np.sum(p * np.log(p), axis=0)
+
+# 步骤3: 权重 w_j
+d = 1 - e
+w = d / d.sum()
+
+print("=== 熵权法计算过程 ===")
+print(f"\n信息熵 e_j (k = 1/ln({n}) = {k:.4f}):")
+for j in range(m):
+    print(f"  e_{j+1}({criteria[j]}) = {e[j]:.4f}")
+
+print(f"\n信息效用值 d_j = 1 - e_j:")
+for j in range(m):
+    print(f"  d_{j+1}({criteria[j]}) = {d[j]:.4f}")
+
+print(f"\n熵权法权重:")
+for j in range(m):
+    print(f"  w_{j+1}({criteria[j]}) = {w[j]:.4f}")
+print(f"  权重和 = {w.sum():.6f}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-5','output-eval-5')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-5')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-5"></div>
+
+    <!-- 5.5 CRITIC 法 -->
+    <h3 class="sub-title">5.5 CRITIC 法：对比强度 + 相关性</h3>
+
+    <div class="box box-def">
+        <span class="box-label">核心思想</span>
+        <p>CRITIC（Criteria Importance Through Intercriteria Correlation）法同时考虑两个维度：</p>
+        <ul>
+            <li><strong>对比强度</strong>（Contrast Intensity）：指标的标准差越大，区分度越高，权重应越大；</li>
+            <li><strong>相关性</strong>（Correlation）：指标间相关系数越大，信息重叠越多，权重应适当<strong>降低</strong>。</li>
+        </ul>
+    </div>
+
+    <div class="box box-formula">
+        <span class="box-label">计算步骤</span>
+        <p>对极差标准化后的数据 $X'$：</p>
+        <p><strong>步骤 1</strong>：计算每个指标的标准差 $\sigma_j$ 和指标间相关系数 $r_{jk}$；</p>
+        <p><strong>步骤 2</strong>：计算信息量：</p>
+        $$C_j = \sigma_j \sum_{k=1}^{m} (1 - r_{jk})$$
+        <p>$\sigma_j$ 越大 → 对比强度越高；$\sum_k(1 - r_{jk})$ 越大 → 与其他指标重复越少。</p>
+        <p><strong>步骤 3</strong>：归一化得权重：</p>
+        $$w_j = \frac{C_j}{\sum_{j=1}^{m} C_j}$$
+    </div>
+
+    <div class="box box-tip">
+        <span class="box-label">熵权法 vs CRITIC 法</span>
+        <p>熵权法只看<strong>单个指标</strong>的数据分布（信息熵），不考虑指标间关系；CRITIC 法额外考虑了<strong>指标间相关性</strong>，对信息重叠的指标给予惩罚。当指标间相关性较强时，CRITIC 法的结果通常更合理。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-6" rows="38">
+import numpy as np
+
+# CRITIC 法
+data = np.array([
+    [85, 600, 92, 3.5],
+    [70, 800, 88, 2.8],
+    [90, 400, 95, 4.0],
+    [65, 700, 80, 2.5],
+    [80, 500, 90, 3.2],
+])
+indicator_types = [1, 1, 1, -1]
+criteria = ['师资力量', '科研经费', '就业率', '学费']
+n, m = data.shape
+
+# 极差标准化正向化
+data_norm = np.zeros_like(data, dtype=float)
+for j in range(m):
+    col = data[:, j]
+    if indicator_types[j] == 1:
+        data_norm[:, j] = (col - col.min()) / (col.max() - col.min())
+    else:
+        data_norm[:, j] = (col.max() - col) / (col.max() - col.min())
+
+# 步骤1: 标准差和相关系数矩阵
+sigma = data_norm.std(axis=0, ddof=0)
+R = np.corrcoef(data_norm.T)  # m×m 相关系数矩阵
+
+print("标准差 σ_j:", np.round(sigma, 4))
+print("\n相关系数矩阵 R:")
+print(np.round(R, 4))
+
+# 步骤2: 信息量 C_j
+C = np.zeros(m)
+for j in range(m):
+    C[j] = sigma[j] * np.sum(1 - R[j, :])
+
+print(f"\n信息量 C_j = σ_j × Σ(1 - r_jk):")
+for j in range(m):
+    print(f"  C_{j+1}({criteria[j]}) = {sigma[j]:.4f} × {np.sum(1-R[j,:]):.4f} = {C[j]:.4f}")
+
+# 步骤3: 权重
+w = C / C.sum()
+print(f"\nCRITIC 法权重:")
+for j in range(m):
+    print(f"  w_{j+1}({criteria[j]}) = {w[j]:.4f}")
+print(f"  权重和 = {w.sum():.6f}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-6','output-eval-6')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-6')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-6"></div>
+
+    <!-- 5.6 层次分析法 (AHP) -->
+    <h3 class="sub-title">5.6 层次分析法 (AHP)：主观赋权</h3>
+
+    <div class="box box-def">
+        <span class="box-label">核心思想</span>
+        <p>AHP（Analytic Hierarchy Process）通过专家<strong>两两比较</strong>各指标的重要性，构造判断矩阵，再通过特征值法提取权重。它属于<strong>主观赋权法</strong>——权重来源于专家判断而非数据分布。</p>
+        <p>AHP 的结构就是 5.1 节介绍的<strong>层次结构</strong>（DAG）：目标层 → 准则层 → 方案层。本节先聚焦准则层的权重计算，方案层评分在 5.7 节 TOPSIS 中处理。</p>
+    </div>
+
+    <div class="box box-formula">
+        <span class="box-label">Saaty 标度与判断矩阵</span>
+        <p>对 $m$ 个指标，专家进行两两比较，填写判断矩阵 $A = (a_{ij})_{m \times m}$：</p>
+        <table style="width:100%; font-size:.88rem; border-collapse:collapse;">
+            <tr style="border-bottom:1px solid #ddd;"><td style="padding:4px 8px; font-weight:700;">标度 $a_{ij}$</td><td style="padding:4px 8px; font-weight:700;">含义</td></tr>
+            <tr style="border-bottom:1px solid #ddd;"><td style="padding:4px 8px;">1</td><td style="padding:4px 8px;">指标 $i$ 与 $j$ 同等重要</td></tr>
+            <tr style="border-bottom:1px solid #ddd;"><td style="padding:4px 8px;">3</td><td style="padding:4px 8px;">指标 $i$ 比 $j$ 稍重要</td></tr>
+            <tr style="border-bottom:1px solid #ddd;"><td style="padding:4px 8px;">5</td><td style="padding:4px 8px;">指标 $i$ 比 $j$ 明显重要</td></tr>
+            <tr style="border-bottom:1px solid #ddd;"><td style="padding:4px 8px;">7</td><td style="padding:4px 8px;">指标 $i$ 比 $j$ 强烈重要</td></tr>
+            <tr style="border-bottom:1px solid #ddd;"><td style="padding:4px 8px;">9</td><td style="padding:4px 8px;">指标 $i$ 比 $j$ 极端重要</td></tr>
+            <tr><td style="padding:4px 8px;">2, 4, 6, 8</td><td style="padding:4px 8px;">相邻标度的中间值</td></tr>
+        </table>
+        <p>判断矩阵满足<strong>互反性</strong>：$a_{ij} = 1 / a_{ji}$，$a_{ii} = 1$。</p>
+    </div>
+
+    <div class="box box-formula">
+        <span class="box-label">特征值法求权重 + 一致性检验</span>
+        <p>若判断矩阵<strong>完全一致</strong>（$a_{ij} \cdot a_{jk} = a_{ik}$），则 $A$ 的最大特征值 $\lambda_{\max} = m$，对应特征向量归一化后即为权重。</p>
+        <p>实际中判断矩阵通常<strong>不完全一致</strong>，需要检验：</p>
+        $$CI = \frac{\lambda_{\max} - m}{m - 1}, \quad CR = \frac{CI}{RI}$$
+        <p>其中 $RI$ 为随机一致性指标（查表：$m=3$: 0.58, $m=4$: 0.90, $m=5$: 1.12）。若 $CR < 0.1$，通过一致性检验；否则需调整判断矩阵。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-7" rows="42">
+import numpy as np
+
+# AHP 层次分析法
+criteria = ['师资力量', '科研经费', '就业率', '学费']
+
+# 成对比较矩阵 (Saaty 1-9 标度)
+# 专家判断: 师资最重要 > 科研 > 就业 > 学费
+A = np.array([
+    [1,   3,   5,   7  ],   # 师资力量 vs 其他
+    [1/3, 1,   3,   5  ],   # 科研经费 vs 其他
+    [1/5, 1/3, 1,   3  ],   # 就业率 vs 其他
+    [1/7, 1/5, 1/3, 1  ],   # 学费 vs 其他
+])
+
+print("判断矩阵 A:")
+print(np.round(A, 4))
+print(f"\n验证互反性: A[0][1] × A[1][0] = {A[0][1]*A[1][0]:.4f} (应≈1)")
+
+# 步骤1: 求最大特征值和特征向量
+eigenvalues, eigenvectors = np.linalg.eig(A)
+max_idx = np.argmax(eigenvalues.real)
+lambda_max = eigenvalues[max_idx].real
+print(f"\n最大特征值 λ_max = {lambda_max:.4f}")
+
+# 对应特征向量归一化
+w_raw = eigenvectors[:, max_idx].real
+w = w_raw / w_raw.sum()
+print(f"权重向量 (归一化): {np.round(w, 4)}")
+
+# 步骤2: 一致性检验
+m = A.shape[0]
+CI = (lambda_max - m) / (m - 1)
+RI_table = {1: 0, 2: 0, 3: 0.58, 4: 0.90, 5: 1.12,
+            6: 1.24, 7: 1.32, 8: 1.41, 9: 1.45}
+RI = RI_table[m]
+CR = CI / RI if RI > 0 else 0
+
+print(f"\n一致性检验:")
+print(f"  CI = (λ_max - m)/(m-1) = ({lambda_max:.4f} - {m})/{m-1} = {CI:.4f}")
+print(f"  RI = {RI} (n={m} 查表)")
+print(f"  CR = CI/RI = {CI:.4f}/{RI} = {CR:.4f}")
+if CR < 0.1:
+    print(f"  ✓ CR < 0.1, 通过一致性检验")
+else:
+    print(f"  ✗ CR ≥ 0.1, 未通过, 需调整判断矩阵")
+
+print(f"\nAHP 权重:")
+for j, c in enumerate(criteria):
+    print(f"  w_{j+1}({c}) = {w[j]:.4f}")
+print(f"  权重和 = {w.sum():.6f}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-7','output-eval-7')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-7')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-7"></div>
+
+    <!-- 5.7 TOPSIS 法 -->
+    <h3 class="sub-title">5.7 TOPSIS 法：逼近理想解排序</h3>
+
+    <div class="box box-def">
+        <span class="box-label">核心思想</span>
+        <p>TOPSIS（Technique for Order Preference by Similarity to Ideal Solution）基于一个直觉：最优方案应离<strong>正理想解</strong>最近，离<strong>负理想解</strong>最远。</p>
+    </div>
+
+    <div class="box box-formula">
+        <span class="box-label">计算步骤</span>
+        <p><strong>步骤 1</strong>：对标准化矩阵加权：$v_{ij} = w_j \cdot x'_{ij}$；</p>
+        <p><strong>步骤 2</strong>：确定正理想解 $A^+$ 和负理想解 $A^-$：</p>
+        $$A^+ = (\max_i v_{i1},\; \max_i v_{i2},\; \ldots,\; \max_i v_{im})$$
+        $$A^- = (\min_i v_{i1},\; \min_i v_{i2},\; \ldots,\; \min_i v_{im})$$
+        <p><strong>步骤 3</strong>：计算各方案到正/负理想解的欧氏距离：</p>
+        $$D_i^+ = \sqrt{\sum_{j=1}^{m}(v_{ij} - A_j^+)^2}, \quad D_i^- = \sqrt{\sum_{j=1}^{m}(v_{ij} - A_j^-)^2}$$
+        <p><strong>步骤 4</strong>：计算相对贴近度：</p>
+        $$C_i = \frac{D_i^-}{D_i^+ + D_i^-}$$
+        <p>$C_i \in [0, 1]$，越大越优。按 $C_i$ 降序排列即为最终排名。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-8" rows="48">
+import numpy as np
+
+# TOPSIS 法 (用熵权法权重)
+data = np.array([
+    [85, 600, 92, 3.5],
+    [70, 800, 88, 2.8],
+    [90, 400, 95, 4.0],
+    [65, 700, 80, 2.5],
+    [80, 500, 90, 3.2],
+])
+indicator_types = [1, 1, 1, -1]
+names = ['项目A', '项目B', '项目C', '项目D', '项目E']
+criteria = ['师资力量', '科研经费', '就业率', '学费']
+n, m = data.shape
+
+# 极差标准化
+data_norm = np.zeros_like(data, dtype=float)
+for j in range(m):
+    col = data[:, j]
+    if indicator_types[j] == 1:
+        data_norm[:, j] = (col - col.min()) / (col.max() - col.min())
+    else:
+        data_norm[:, j] = (col.max() - col) / (col.max() - col.min())
+
+# 熵权法求权重 (紧凑写法)
+p = (data_norm + 1e-10) / (data_norm + 1e-10).sum(axis=0, keepdims=True)
+k = 1.0 / np.log(n)
+e = -k * np.sum(p * np.log(p), axis=0)
+w = (1 - e) / (1 - e).sum()
+
+print(f"熵权法权重: {np.round(w, 4)}")
+
+# 步骤1: 加权标准化矩阵
+V = data_norm * w
+
+# 步骤2: 正理想解 & 负理想解
+A_plus = V.max(axis=0)
+A_minus = V.min(axis=0)
+print(f"\n正理想解 A+: {np.round(A_plus, 4)}")
+print(f"负理想解 A-: {np.round(A_minus, 4)}")
+
+# 步骤3: 欧氏距离
+D_plus = np.sqrt(np.sum((V - A_plus)**2, axis=1))
+D_minus = np.sqrt(np.sum((V - A_minus)**2, axis=1))
+
+# 步骤4: 相对贴近度
+C = D_minus / (D_plus + D_minus)
+
+# 步骤5: 排序
+rank = np.argsort(-C) + 1
+
+print(f"\n{'项目':>6} {'D+':>8} {'D-':>8} {'贴近度C':>8} {'排名':>4}")
+for i in range(n):
+    print(f"{names[i]:>6} {D_plus[i]:>8.4f} {D_minus[i]:>8.4f} {C[i]:>8.4f} {rank[i]:>4}")
+
+print(f"\n推荐: {names[np.argmax(C)]} (贴近度 {C.max():.4f})")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-8','output-eval-8')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-8')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-8"></div>
+
+    <!-- 5.8 组合赋权与综合评价 -->
+    <h3 class="sub-title">5.8 组合赋权与综合评价</h3>
+
+    <div class="box box-def">
+        <span class="box-label">为什么需要组合赋权</span>
+        <p>客观赋权法（熵权法、CRITIC 法）仅依赖数据分布，忽略了专家经验；主观赋权法（AHP）依赖专家判断，可能带有个人偏好偏差。<strong>组合赋权</strong>将两者结合，既利用数据信息又融入专家知识。</p>
+    </div>
+
+    <div class="box box-formula">
+        <span class="box-label">乘法合成组合权重</span>
+        <p>最常用的组合方法是<strong>乘法合成</strong>：对客观权重 $w_j^{\text{obj}}$ 和主观权重 $w_j^{\text{sub}}$，组合权重为：</p>
+        $$w_j^* = \frac{w_j^{\text{obj}} \cdot w_j^{\text{sub}}}{\sum_{j=1}^{m} w_j^{\text{obj}} \cdot w_j^{\text{sub}}}$$
+        <p>乘法合成使得"双方都认为重要"的指标权重最大，"一方认为不重要"就会显著降低——比加法合成更灵敏。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-9" rows="45">
+import numpy as np
+
+# 组合赋权: 熵权法(客观) × AHP(主观)
+criteria = ['师资力量', '科研经费', '就业率', '学费']
+
+# --- 先计算熵权法权重 ---
+data = np.array([
+    [85, 600, 92, 3.5], [70, 800, 88, 2.8],
+    [90, 400, 95, 4.0], [65, 700, 80, 2.5],
+    [80, 500, 90, 3.2],
+])
+indicator_types = [1, 1, 1, -1]
+n, m = data.shape
+data_norm = np.zeros_like(data, dtype=float)
+for j in range(m):
+    col = data[:, j]
+    if indicator_types[j] == 1:
+        data_norm[:, j] = (col - col.min()) / (col.max() - col.min())
+    else:
+        data_norm[:, j] = (col.max() - col) / (col.max() - col.min())
+p = (data_norm + 1e-10) / (data_norm + 1e-10).sum(axis=0, keepdims=True)
+e = -(1/np.log(n)) * np.sum(p * np.log(p), axis=0)
+w_entropy = (1 - e) / (1 - e).sum()
+
+# --- AHP 权重 ---
+A_ahp = np.array([
+    [1, 3, 5, 7], [1/3, 1, 3, 5],
+    [1/5, 1/3, 1, 3], [1/7, 1/5, 1/3, 1],
+])
+eigenvalues, eigvecs = np.linalg.eig(A_ahp)
+max_idx = np.argmax(eigenvalues.real)
+w_ahp = eigvecs[:, max_idx].real
+w_ahp = w_ahp / w_ahp.sum()
+
+# --- 乘法合成组合权重 ---
+w_combined = w_entropy * w_ahp
+w_combined = w_combined / w_combined.sum()
+
+print("=== 组合赋权 ===")
+print(f"\n熵权法权重(客观): {np.round(w_entropy, 4)}")
+print(f"AHP权重(主观):    {np.round(w_ahp, 4)}")
+print(f"\n组合权重(乘法合成):")
+for j in range(len(criteria)):
+    print(f"  w_{j+1}({criteria[j]}) = {w_combined[j]:.4f}")
+print(f"  权重和 = {w_combined.sum():.6f}")
+
+# 对比分析
+print(f"\n权重对比:")
+print(f"{'指标':>8} {'熵权法':>8} {'AHP':>8} {'组合':>8}")
+for j in range(len(criteria)):
+    print(f"{criteria[j]:>8} {w_entropy[j]:>8.4f} {w_ahp[j]:>8.4f} {w_combined[j]:>8.4f}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-9','output-eval-9')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-9')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-9"></div>
+
+    <!-- 5.9 综合案例 -->
+    <h3 class="sub-title">5.9 综合案例：四种方法完整对比</h3>
+
+    <div class="box box-def">
+        <span class="box-label">完整流程</span>
+        <p>对 5 个研究生项目，分别用<strong>熵权法 + TOPSIS</strong>、<strong>CRITIC 法 + TOPSIS</strong>、<strong>AHP + TOPSIS</strong>、<strong>组合权重 + TOPSIS</strong> 四种方案进行评价，比较排名差异。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-10" rows="80">
+import numpy as np
+
+# ========== 综合案例: 四种赋权 × TOPSIS ==========
+data = np.array([
+    [85, 600, 92, 3.5],
+    [70, 800, 88, 2.8],
+    [90, 400, 95, 4.0],
+    [65, 700, 80, 2.5],
+    [80, 500, 90, 3.2],
+])
+indicator_types = [1, 1, 1, -1]
+names = ['项目A', '项目B', '项目C', '项目D', '项目E']
+criteria = ['师资力量', '科研经费', '就业率', '学费']
+n, m = data.shape
+
+# 极差标准化
+data_norm = np.zeros_like(data, dtype=float)
+for j in range(m):
+    col = data[:, j]
+    if indicator_types[j] == 1:
+        data_norm[:, j] = (col - col.min()) / (col.max() - col.min())
+    else:
+        data_norm[:, j] = (col.max() - col) / (col.max() - col.min())
+
+# --- 熵权法权重 ---
+p = (data_norm + 1e-10) / (data_norm + 1e-10).sum(axis=0, keepdims=True)
+e = -(1/np.log(n)) * np.sum(p * np.log(p), axis=0)
+w_entropy = (1 - e) / (1 - e).sum()
+
+# --- CRITIC法权重 ---
+sigma = data_norm.std(axis=0, ddof=0)
+R = np.corrcoef(data_norm.T)
+C_critic = np.array([sigma[j] * np.sum(1 - R[j, :]) for j in range(m)])
+w_critic = C_critic / C_critic.sum()
+
+# --- AHP权重 ---
+A_ahp = np.array([
+    [1, 3, 5, 7], [1/3, 1, 3, 5],
+    [1/5, 1/3, 1, 3], [1/7, 1/5, 1/3, 1],
+])
+eigenvalues, eigvecs = np.linalg.eig(A_ahp)
+max_idx = np.argmax(eigenvalues.real)
+w_ahp = eigvecs[:, max_idx].real
+w_ahp = w_ahp / w_ahp.sum()
+
+# --- 组合权重 ---
+w_comb = w_entropy * w_ahp
+w_comb = w_comb / w_comb.sum()
+
+# TOPSIS 通用函数
+def topsis(data_norm, weights):
+    V = data_norm * weights
+    A_plus = V.max(axis=0)
+    A_minus = V.min(axis=0)
+    D_plus = np.sqrt(np.sum((V - A_plus)**2, axis=1))
+    D_minus = np.sqrt(np.sum((V - A_minus)**2, axis=1))
+    C = D_minus / (D_plus + D_minus)
+    return C
+
+# 四种方案
+methods = {
+    '熵权+TOPSIS': w_entropy,
+    'CRITIC+TOPSIS': w_critic,
+    'AHP+TOPSIS': w_ahp,
+    '组合+TOPSIS': w_comb,
+}
+
+print("权重对比:")
+print(f"{'方法':>14}", end='')
+for c in criteria:
+    print(f"{c:>10}", end='')
+print()
+for name, w in methods.items():
+    print(f"{name:>14}", end='')
+    for j in range(m):
+        print(f"{w[j]:>10.4f}", end='')
+    print()
+
+print(f"\n{'='*55}")
+print("TOPSIS 排名结果:")
+print(f"{'方法':>14}", end='')
+for name in names:
+    print(f"{name:>8}", end='')
+print()
+
+results = {}
+for method_name, w in methods.items():
+    C = topsis(data_norm, w)
+    rank = np.argsort(-C) + 1
+    results[method_name] = rank
+    print(f"{method_name:>14}", end='')
+    for i in range(n):
+        print(f"{rank[i]:>8}", end='')
+    print()
+
+# 一致性分析
+print(f"\n排名一致性分析:")
+for name in names:
+    i = names.index(name)
+    ranks = [results[m][i] for m in methods]
+    if len(set(ranks)) == 1:
+        print(f"  {name}: 各方法排名均为 {ranks[0]} ✓")
+    else:
+        print(f"  {name}: 各方法排名 {ranks} ✗ (有分歧)")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-10','output-eval-10')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-10')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-10"></div>
+
+    <hr>
+
+    <!-- 练习题 -->
+    <h3 class="sub-title">练习题</h3>
+
+    <!-- 练习 1 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 1</span>
+        <p>对数据矩阵 $X = \begin{bmatrix} 80 & 500 & 90 \\ 60 & 700 & 85 \\ 95 & 300 & 98 \end{bmatrix}$，三个指标均为效益型，<strong>不使用 NumPy</strong>，手动计算极差标准化后的矩阵。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-ex1" rows="4"># 请在此编写代码（不使用 NumPy）
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-ex1','output-eval-ex1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-ex1')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-eval-ex1','evalmodel-ex1')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-ex1"></div>
+
+    <!-- 练习 2 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 2</span>
+        <p>用 NumPy 验证练习 1 的结果，并额外处理一列成本型指标 $[5, 2, 8]$（正向化后追加到矩阵右侧）。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-ex2" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-ex2','output-eval-ex2')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-ex2')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-eval-ex2','evalmodel-ex2')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-ex2"></div>
+
+    <!-- 练习 3 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 3</span>
+        <p>对极差标准化矩阵 $\begin{bmatrix} 0.571 & 0.500 & 0.333 \\ 0 & 1 & 0 \\ 1 & 0 & 1 \end{bmatrix}$，用代码计算各列的信息熵 $e_j$ 和熵权法权重 $w_j$（3 个方案，$k = 1/\ln 3$），并输出详细中间过程。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-ex3" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-ex3','output-eval-ex3')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-ex3')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-eval-ex3','evalmodel-ex3')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-ex3"></div>
+
+    <!-- 练习 4 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 4</span>
+        <p>对练习 3 的标准化矩阵，用代码计算 CRITIC 法权重，与熵权法权重对比，分析差异原因。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-ex4" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-ex4','output-eval-ex4')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-ex4')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-eval-ex4','evalmodel-ex4')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-ex4"></div>
+
+    <!-- 练习 5 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 5</span>
+        <p>给定判断矩阵 $A = \begin{bmatrix} 1 & 2 & 6 \\ 1/2 & 1 & 4 \\ 1/6 & 1/4 & 1 \end{bmatrix}$，计算最大特征值 $\lambda_{\max}$、CI、CR，判断是否通过一致性检验（$RI = 0.58$）。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-ex5" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-ex5','output-eval-ex5')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-ex5')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-eval-ex5','evalmodel-ex5')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-ex5"></div>
+
+    <!-- 练习 6 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 6</span>
+        <p>构造一个<strong>不一致</strong>的 3 阶判断矩阵（$CR > 0.1$），并输出其 CR 值。提示：让 $a_{12} = 5, a_{23} = 5, a_{13} = 2$（违反传递性 $a_{12} \cdot a_{23} \neq a_{13}$）。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-ex6" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-ex6','output-eval-ex6')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-ex6')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-eval-ex6','evalmodel-ex6')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-ex6"></div>
+
+    <!-- 练习 7 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 7</span>
+        <p>对标准化矩阵 $\begin{bmatrix} 1.0 & 0.0 & 1.0 \\ 0.0 & 1.0 & 0.0 \\ 0.5 & 0.5 & 0.5 \end{bmatrix}$，给定等权重 $w = [1/3, 1/3, 1/3]$，计算 TOPSIS 的正/负理想解、各方案的欧氏距离和贴近度 $C_i$，然后按贴近度排序。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-ex7" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-ex7','output-eval-ex7')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-ex7')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-eval-ex7','evalmodel-ex7')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-ex7"></div>
+
+    <!-- 练习 8 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 8</span>
+        <p>对 5 个研究生项目的数据（5.2 节），用 AHP 权重 + TOPSIS 求排名，与熵权法 + TOPSIS（5.7 节结果）对比，讨论主观法和客观法在哪个项目上排名差异最大，并分析原因。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-ex8" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-ex8','output-eval-ex8')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-ex8')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-eval-ex8','evalmodel-ex8')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-ex8"></div>
+
+    <!-- 🏆 竞赛级挑战题 -->
+    <h3 class="sub-title">🏆 竞赛级挑战题</h3>
+
+    <!-- 竞赛题 1 -->
+    <div class="box box-exercise" style="border-left: 4px solid #ef4444;">
+        <span class="box-label" style="color: #dc2626;">竞赛题 1</span>
+        <p><strong>熵权法极值的数学证明</strong></p>
+        <p>对 $n$ 个方案的单个指标，设标准化后所有值为 $x'_1, x'_2, \ldots, x'_n \in [0, 1]$：</p>
+        <ol>
+            <li>证明：当 $x'_1 = x'_2 = \cdots = x'_n$ 时，信息熵 $e$ 达到最大值 $e_{\max} = 1$（完全无区分力），对应权重 $w = 0$；</li>
+            <li>证明：当只有一个 $x'_i = 1$，其余 $x'_k = 0$（$k \neq i$）时，$e \to 0$（极限情况），对应最大信息效用值；</li>
+            <li>用代码构造 $n=5$ 的两组数据验证上述结论，绘制"数据均匀程度 vs 信息熵"的关系图。</li>
+        </ol>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-ex9" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-ex9','output-eval-ex9')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-ex9')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-eval-ex9','evalmodel-ex9')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-ex9"></div>
+
+    <!-- 竞赛题 2 -->
+    <div class="box box-exercise" style="border-left: 4px solid #ef4444;">
+        <span class="box-label" style="color: #dc2626;">竞赛题 2</span>
+        <p><strong>AHP 判断矩阵的灵敏度分析</strong></p>
+        <p>在 5.6 节的判断矩阵中，$a_{12} = 3$（师资比科研"稍重要"）。</p>
+        <ol>
+            <li>将 $a_{12}$ 从 1 变到 9（同时 $a_{21} = 1/a_{12}$，其余元素不变），观察 AHP 权重向量和一致性比率 CR 如何变化；</li>
+            <li>找出使 $CR = 0.1$（一致性检验的临界点）的 $a_{12}$ 的近似值；</li>
+            <li>绘制 $a_{12}$ 与各指标权重、CR 的关系图，讨论：当 $a_{12}$ 变化时，哪个指标权重变化最敏感？</li>
+        </ol>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-eval-ex10" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-eval-ex10','output-eval-ex10')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-eval-ex10')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-eval-ex10','evalmodel-ex10')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-eval-ex10"></div>
+
+</section>
+
+<!-- ================================================================ -->
 <!-- ========== Section 4: NumPy 基础（原Section 3） ========== -->
 <!-- ================================================================ -->
 <section id="numpy" class="section">
@@ -3193,6 +4191,439 @@ print(f"\n最合理模型: s = 4.9t² (物理公式)")
 print(f"  理由: ① RSS已很小(误差来自测量噪声)")
 print(f"  ② 仅0个自由参数，完全由物理定律确定")
 print(f"  ③ β₀≈{b0:.2f}≈0, β₁≈{b1:.2f}≈0 验证了理论预期")`,
+
+
+	// --- 综合评价模型练习 ---
+	"evalmodel-ex1": `# 手动极差标准化 (不使用 NumPy)
+data = [
+    [80, 500, 90],
+    [60, 700, 85],
+    [95, 300, 98],
+]
+
+# 各列极值
+cols = list(zip(*data))  # 转置
+for j, col in enumerate(cols):
+    x_min, x_max = min(col), max(col)
+    print(f"指标{j+1}: min={x_min}, max={x_max}, range={x_max-x_min}")
+
+# 标准化
+data_norm = []
+for i, row in enumerate(data):
+    row_norm = []
+    for j, val in enumerate(row):
+        col = cols[j]
+        x_min, x_max = min(col), max(col)
+        row_norm.append((val - x_min) / (x_max - x_min))
+    data_norm.append(row_norm)
+
+print("\\n标准化矩阵:")
+for i, row in enumerate(data_norm):
+    print(f"  方案{i+1}: [{', '.join(f'{v:.4f}' for v in row)}]")`,
+
+	"evalmodel-ex2": `import numpy as np
+
+# 验证练习1
+data = np.array([
+    [80, 500, 90],
+    [60, 700, 85],
+    [95, 300, 98],
+])
+
+# 极差标准化 (效益型)
+n, m = data.shape
+data_norm = np.zeros_like(data, dtype=float)
+for j in range(m):
+    col = data[:, j]
+    data_norm[:, j] = (col - col.min()) / (col.max() - col.min())
+
+print("效益型标准化:")
+print(np.round(data_norm, 4))
+
+# 追加成本型指标
+cost_col = np.array([5, 2, 8])
+cost_norm = (cost_col.max() - cost_col) / (cost_col.max() - cost_col.min())
+
+data_full = np.column_stack([data_norm, cost_norm])
+print(f"\\n追加成本型指标 [5,2,8] 正向化后: {np.round(cost_norm, 4)}")
+print("\\n完整标准化矩阵:")
+print(np.round(data_full, 4))`,
+
+	"evalmodel-ex3": `import numpy as np
+
+# 熵权法权重计算
+data_norm = np.array([
+    [0.571, 0.500, 0.333],
+    [0.000, 1.000, 0.000],
+    [1.000, 0.000, 1.000],
+])
+n, m = data_norm.shape
+criteria = ['指标1', '指标2', '指标3']
+
+# 微小平移避免log(0)
+X = data_norm + 1e-10
+
+# 步骤1: 比重
+p = X / X.sum(axis=0, keepdims=True)
+print("比重矩阵 p_ij:")
+print(np.round(p, 4))
+
+# 步骤2: 信息熵
+k = 1.0 / np.log(n)
+e = -k * np.sum(p * np.log(p), axis=0)
+print(f"\\nk = 1/ln(3) = {k:.4f}")
+print(f"信息熵 e_j: {np.round(e, 4)}")
+
+# 步骤3: 权重
+d = 1 - e
+w = d / d.sum()
+print(f"信息效用值 d_j: {np.round(d, 4)}")
+print(f"权重 w_j: {np.round(w, 4)}")
+print(f"权重和: {w.sum():.4f}")
+
+print("\\n详细过程 (指标1):")
+print(f"  p_11={p[0,0]:.4f}, p_21={p[1,0]:.4f}, p_31={p[2,0]:.4f}")
+print(f"  -k*(p11*ln(p11)+p21*ln(p21)+p31*ln(p31)) = {e[0]:.4f}")`,
+
+	"evalmodel-ex4": `import numpy as np
+
+# CRITIC 法 vs 熵权法对比
+data_norm = np.array([
+    [0.571, 0.500, 0.333],
+    [0.000, 1.000, 0.000],
+    [1.000, 0.000, 1.000],
+])
+n, m = data_norm.shape
+criteria = ['指标1', '指标2', '指标3']
+
+# 熵权法
+X = data_norm + 1e-10
+p = X / X.sum(axis=0, keepdims=True)
+k = 1.0 / np.log(n)
+e = -k * np.sum(p * np.log(p), axis=0)
+w_entropy = (1 - e) / (1 - e).sum()
+
+# CRITIC法
+sigma = data_norm.std(axis=0, ddof=0)
+R = np.corrcoef(data_norm.T)
+C_critic = np.array([sigma[j] * np.sum(1 - R[j, :]) for j in range(m)])
+w_critic = C_critic / C_critic.sum()
+
+print("标准差:", np.round(sigma, 4))
+print("相关系数矩阵:")
+print(np.round(R, 4))
+print(f"\\n信息量 C_j: {np.round(C_critic, 4)}")
+
+print(f"\\n{'指标':>6} {'熵权法':>8} {'CRITIC':>8} {'差异':>8}")
+for j in range(m):
+    diff = w_critic[j] - w_entropy[j]
+    print(f"{criteria[j]:>6} {w_entropy[j]:>8.4f} {w_critic[j]:>8.4f} {diff:>8.4f}")
+
+print("\\n差异原因: CRITIC法考虑了指标间相关性，")
+print("相关性高的指标会被惩罚（降低权重），")
+print("而熵权法只看单个指标的数据分布。")`,
+
+	"evalmodel-ex5": `import numpy as np
+
+# AHP 一致性检验
+A = np.array([
+    [1,   2,   6  ],
+    [1/2, 1,   4  ],
+    [1/6, 1/4, 1  ],
+])
+
+print("判断矩阵 A:")
+print(np.round(A, 4))
+
+# 最大特征值和特征向量
+eigenvalues, eigvecs = np.linalg.eig(A)
+max_idx = np.argmax(eigenvalues.real)
+lambda_max = eigenvalues[max_idx].real
+w_raw = eigvecs[:, max_idx].real
+w = w_raw / w_raw.sum()
+
+print(f"\\n最大特征值 λ_max = {lambda_max:.4f}")
+print(f"权重向量: {np.round(w, 4)}")
+
+# 一致性检验
+n = A.shape[0]
+CI = (lambda_max - n) / (n - 1)
+RI = 0.58
+CR = CI / RI
+
+print(f"\\nCI = (λ_max - n)/(n-1) = ({lambda_max:.4f} - {n})/{n-1} = {CI:.4f}")
+print(f"RI = {RI} (n=3 查表)")
+print(f"CR = CI/RI = {CI:.4f}/{RI} = {CR:.4f}")
+if CR < 0.1:
+    print(f"✓ CR = {CR:.4f} < 0.1, 通过一致性检验")
+else:
+    print(f"✗ CR = {CR:.4f} >= 0.1, 未通过一致性检验")`,
+
+	"evalmodel-ex6": `import numpy as np
+
+# 构造不一致的判断矩阵
+# a12=5, a23=5, a13=2 → a12*a23=25 ≠ a13=2, 严重不一致
+A = np.array([
+    [1,   5,   2  ],
+    [1/5, 1,   5  ],
+    [1/2, 1/5, 1  ],
+])
+
+print("不一致判断矩阵 A:")
+print(np.round(A, 4))
+
+# 验证不一致
+print(f"\\n检验: a12*a23 = {A[0,1]*A[1,2]:.1f} ≠ a13 = {A[0,2]:.1f}")
+
+# 一致性检验
+eigenvalues, eigvecs = np.linalg.eig(A)
+max_idx = np.argmax(eigenvalues.real)
+lambda_max = eigenvalues[max_idx].real
+w_raw = eigvecs[:, max_idx].real
+w = w_raw / w_raw.sum()
+
+n = A.shape[0]
+CI = (lambda_max - n) / (n - 1)
+RI = 0.58
+CR = CI / RI
+
+print(f"\\nλ_max = {lambda_max:.4f}")
+print(f"CI = {CI:.4f}")
+print(f"CR = {CR:.4f}")
+if CR >= 0.1:
+    print(f"✗ CR = {CR:.4f} >= 0.1, 未通过一致性检验 (符合预期)")
+else:
+    print(f"✓ CR = {CR:.4f} < 0.1, 意外通过")`,
+
+	"evalmodel-ex7": `import numpy as np
+
+# TOPSIS 手算验证
+data_norm = np.array([
+    [1.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0],
+    [0.5, 0.5, 0.5],
+])
+w = np.array([1/3, 1/3, 1/3])
+names = ['方案1', '方案2', '方案3']
+
+# 加权矩阵
+V = data_norm * w
+print(f"加权矩阵 V (等权重 1/3):")
+print(np.round(V, 4))
+
+A_plus = V.max(axis=0)
+A_minus = V.min(axis=0)
+print(f"\\n正理想解 A+ = {np.round(A_plus, 4)}")
+print(f"负理想解 A- = {np.round(A_minus, 4)}")
+
+# 距离
+D_plus = np.sqrt(np.sum((V - A_plus)**2, axis=1))
+D_minus = np.sqrt(np.sum((V - A_minus)**2, axis=1))
+C = D_minus / (D_plus + D_minus)
+
+print(f"\\n{'方案':>6} {'D+':>8} {'D-':>8} {'贴近度C':>8}")
+for i in range(3):
+    print(f"{names[i]:>6} {D_plus[i]:>8.4f} {D_minus[i]:>8.4f} {C[i]:>8.4f}")
+
+rank = np.argsort(-C) + 1
+print(f"\\n排名: 方案1={rank[0]}, 方案2={rank[1]}, 方案3={rank[2]}")
+
+print(f"\\n解析: 方案1在指标1,3上最优(=1), 方案2在指标2上最优(=1)")
+print(f"方案1贴近度更高因为有两个指标取到正理想值")`,
+
+	"evalmodel-ex8": `import numpy as np
+
+# AHP+TOPSIS vs 熵权+TOPSIS 对比
+data = np.array([
+    [85, 600, 92, 3.5],
+    [70, 800, 88, 2.8],
+    [90, 400, 95, 4.0],
+    [65, 700, 80, 2.5],
+    [80, 500, 90, 3.2],
+])
+indicator_types = [1, 1, 1, -1]
+names = ['项目A', '项目B', '项目C', '项目D', '项目E']
+n, m = data.shape
+
+# 标准化
+data_norm = np.zeros_like(data, dtype=float)
+for j in range(m):
+    col = data[:, j]
+    if indicator_types[j] == 1:
+        data_norm[:, j] = (col - col.min()) / (col.max() - col.min())
+    else:
+        data_norm[:, j] = (col.max() - col) / (col.max() - col.min())
+
+def topsis(data_norm, weights):
+    V = data_norm * weights
+    A_plus = V.max(axis=0)
+    A_minus = V.min(axis=0)
+    D_plus = np.sqrt(np.sum((V - A_plus)**2, axis=1))
+    D_minus = np.sqrt(np.sum((V - A_minus)**2, axis=1))
+    C = D_minus / (D_plus + D_minus)
+    return C, np.argsort(-C) + 1
+
+# 熵权法
+p = (data_norm + 1e-10) / (data_norm + 1e-10).sum(axis=0, keepdims=True)
+e = -(1/np.log(n)) * np.sum(p * np.log(p), axis=0)
+w_entropy = (1 - e) / (1 - e).sum()
+
+# AHP
+A_ahp = np.array([
+    [1, 3, 5, 7], [1/3, 1, 3, 5],
+    [1/5, 1/3, 1, 3], [1/7, 1/5, 1/3, 1],
+])
+eigenvalues, eigvecs = np.linalg.eig(A_ahp)
+max_idx = np.argmax(eigenvalues.real)
+w_ahp = eigvecs[:, max_idx].real
+w_ahp = w_ahp / w_ahp.sum()
+
+C_ent, rank_ent = topsis(data_norm, w_entropy)
+C_ahp, rank_ahp = topsis(data_norm, w_ahp)
+
+print(f"熵权法权重: {np.round(w_entropy, 4)}")
+print(f"AHP权重:    {np.round(w_ahp, 4)}")
+print(f"\\n{'项目':>6} {'熵权排名':>8} {'AHP排名':>8} {'差异':>4}")
+max_diff_name = ''
+max_diff = 0
+for i in range(n):
+    diff = abs(rank_ent[i] - rank_ahp[i])
+    marker = ' ←' if diff > 0 else ''
+    print(f"{names[i]:>6} {rank_ent[i]:>8} {rank_ahp[i]:>8} {diff:>4}{marker}")
+    if diff > max_diff:
+        max_diff = diff
+        max_diff_name = names[i]
+
+print(f"\\n排名差异最大的项目: {max_diff_name} (差异={max_diff})")
+print("原因: AHP主观认为师资最重要(权重最大),")
+print("而熵权法客观分配更均匀, 导致不同偏好下排名变化。")`,
+
+	"evalmodel-ex9": `# 竞赛题1: 熵权法极值的数学证明与验证
+import numpy as np
+import matplotlib.pyplot as plt
+
+n = 5
+k = 1.0 / np.log(n)
+
+# 情况1: 所有值相等 → e = 1, w = 0
+x_equal = np.ones(n)  # 标准化后全相等
+p_equal = x_equal / x_equal.sum()
+e_equal = -k * np.sum(p_equal * np.log(p_equal))
+print(f"情况1 (所有值相等):")
+print(f"  x = {x_equal}")
+print(f"  p = {p_equal}")
+print(f"  e = {e_equal:.6f} → 理论值 1.0")
+print(f"  d = 1-e = {1-e_equal:.6f} → 理论值 0.0")
+
+# 情况2: 只有一个为1, 其余为0 → e → 0
+# 用极限逼近: epsilon → 0
+print(f"\\n情况2 (极限逼近, 只有一个非零):")
+for eps in [0.1, 0.01, 0.001, 0.0001]:
+    x_sparse = np.zeros(n)
+    x_sparse[0] = 1.0
+    x_sparse[1:] = eps
+    p_s = x_sparse / x_sparse.sum()
+    e_s = -k * np.sum(np.where(p_s > 0, p_s * np.log(p_s), 0))
+    print(f"  ε={eps}: e = {e_s:.6f}, d = {1-e_s:.6f}")
+
+# 情况3: 绘制均匀程度 vs 信息熵
+# 用alpha控制: x_i = (i/n)^alpha, alpha越大越不均匀
+alphas = np.linspace(0.1, 10, 100)
+entropies = []
+for alpha in alphas:
+    x = (np.arange(1, n+1) / n) ** alpha
+    x = x / x.max()  # 标准化到[0,1]
+    p = x / x.sum()
+    e = -k * np.sum(np.where(p > 0, p * np.log(p), 0))
+    entropies.append(e)
+
+plt.figure(figsize=(7, 4.5))
+plt.plot(alphas, entropies, 'b-', linewidth=2)
+plt.xlabel('α (数据不均匀程度, 越大越不均匀)')
+plt.ylabel('信息熵 e')
+plt.title('数据均匀程度 vs 信息熵 (n=5)')
+plt.axhline(y=1.0, color='r', linestyle='--', alpha=0.5, label='e=1 (完全均匀)')
+plt.axhline(y=0.0, color='g', linestyle='--', alpha=0.5, label='e=0 (完全集中)')
+plt.legend(); plt.grid(True, alpha=0.3); plt.tight_layout(); plt.show()
+
+print("\\n结论:")
+print("1. 数据越均匀 → 信息熵越大 → 权重越小 (区分力低)")
+print("2. 数据越不均匀 → 信息熵越小 → 权重越大 (区分力高)")
+print("3. 极端: 全相等 e=1→w=0; 完全集中 e→0→w→max")`,
+
+	"evalmodel-ex10": `# 竞赛题2: AHP 灵敏度分析
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 基准矩阵 (5.6节), 变化a12
+a12_values = np.arange(1, 9.1, 0.2)
+criteria = ['师资力量', '科研经费', '就业率', '学费']
+weights_history = []
+cr_history = []
+
+for a12 in a12_values:
+    A = np.array([
+        [1,     a12,   5,     7    ],
+        [1/a12, 1,     3,     5    ],
+        [1/5,   1/3,   1,     3    ],
+        [1/7,   1/5,   1/3,   1    ],
+    ])
+    eigenvalues, eigvecs = np.linalg.eig(A)
+    max_idx = np.argmax(eigenvalues.real)
+    lambda_max = eigenvalues[max_idx].real
+    w_raw = eigvecs[:, max_idx].real
+    w = w_raw / w_raw.sum()
+
+    n = A.shape[0]
+    CI = (lambda_max - n) / (n - 1)
+    RI = 0.90
+    CR = CI / RI
+
+    weights_history.append(w.real)
+    cr_history.append(CR)
+
+weights_history = np.array(weights_history)
+cr_history = np.array(cr_history)
+
+# 找 CR = 0.1 的临界点
+critical_idx = np.argmin(np.abs(cr_history - 0.1))
+a12_critical = a12_values[critical_idx]
+print(f"CR=0.1 临界点: a12 ≈ {a12_critical:.1f} (CR={cr_history[critical_idx]:.4f})")
+
+# 绘图: 权重变化
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.5))
+
+colors = ['#2563eb', '#10b981', '#f59e0b', '#ef4444']
+for j in range(4):
+    ax1.plot(a12_values, weights_history[:, j], color=colors[j],
+             linewidth=2, label=criteria[j])
+ax1.set_xlabel('a12 (师资 vs 科研 重要性)')
+ax1.set_ylabel('权重')
+ax1.set_title('AHP 权重随 a12 变化')
+ax1.legend(fontsize=9); ax1.grid(True, alpha=0.3)
+
+ax2.plot(a12_values, cr_history, 'r-', linewidth=2)
+ax2.axhline(y=0.1, color='k', linestyle='--', alpha=0.5, label='CR=0.1 临界线')
+ax2.axvline(x=a12_critical, color='g', linestyle=':',
+            alpha=0.5, label=f'a12={a12_critical:.1f}')
+ax2.set_xlabel('a12')
+ax2.set_ylabel('CR')
+ax2.set_title('一致性比率 CR 随 a12 变化')
+ax2.legend(fontsize=9); ax2.grid(True, alpha=0.3)
+
+plt.tight_layout(); plt.show()
+
+# 敏感度分析
+print("\\n权重变化范围:")
+for j in range(4):
+    w_min = weights_history[:, j].min()
+    w_max = weights_history[:, j].max()
+    print(f"  {criteria[j]}: [{w_min:.4f}, {w_max:.4f}], 变幅={w_max-w_min:.4f}")
+
+most_sensitive = np.argmax(weights_history.max(axis=0) - weights_history.min(axis=0))
+print(f"\\n最敏感指标: {criteria[most_sensitive]}")
+print(f"原因: a12直接控制师资vs科研的相对重要性,")
+print(f"师资权重随a12增大而增大, 变幅最大。")`,
 
 // --- 线性回归练习 ---
 "linreg-ex1": `import numpy as np
