@@ -30,3 +30,9 @@ Desktop.ini
 # Environment variables
 .env
 .env.local
+
+# User code files (now stored at ~/code/, outside repo)
+code/
+
+# Claude Code
+CLAUDE.md

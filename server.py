@@ -15,8 +15,9 @@ from pathlib import Path
 
 app = Flask(__name__)
 
-# 代码保存目录
-CODE_DIR = Path(__file__).parent / "code"
+# 代码保存目录 —— 放在项目同级目录下，避免 git pull 冲突
+# 即 ~/code/，与 ~/py-web-runner/ 平级
+CODE_DIR = Path(__file__).parent.parent / "code"
 CODE_DIR.mkdir(exist_ok=True)
 
 # 文件名安全校验：只允许 字母/数字/下划线/连字符/中文 + .py
