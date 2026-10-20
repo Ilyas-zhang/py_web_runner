@@ -285,7 +285,7 @@
 <!-- ==================== Header ==================== -->
 <div class="header">
     <h1>高中数学竞赛 · Python 编程基础</h1>
-    <p class="subtitle">线性代数 · 线性回归 · 多元线性回归 · 多项式回归 · 综合评价模型 · NumPy · Python 语法测试</p>
+    <p class="subtitle">线性代数 · 线性回归 · 多元线性回归 · 多项式回归 · 综合评价模型 · 差分方程 · NumPy · Python 语法测试</p>
 </div>
 
 <!-- ==================== Navigation ==================== -->
@@ -296,6 +296,7 @@
     <a href="#multireg">多元线性回归</a>
     <a href="#polyreg">多项式回归</a>
     <a href="#evalmodel">综合评价模型</a>
+    <a href="#diffeq">差分方程</a>
     <a href="#numpy">NumPy</a>
     <a href="#pytest">Python 测试</a>
     <a href="#editor">编辑器</a>
@@ -3036,6 +3037,532 @@ for name in names:
 </section>
 
 <!-- ================================================================ -->
+<!-- ========== Section 7: 差分方程 ========== -->
+<!-- ================================================================ -->
+<section id="diffeq" class="section">
+    <h2 class="section-title">差分方程</h2>
+
+    <!-- 7.1 递推建模 -->
+    <h3 class="sub-title">7.1 递推建模</h3>
+
+    <div class="box box-def">
+        <span class="box-label">定义</span>
+        <p><strong>差分方程</strong>（也称<strong>递推关系</strong>）是描述离散序列中相邻项之间关系的方程。给定一个序列 $\{a_n\}$，差分方程形如：</p>
+        $$a_{n+1} = f(a_n, a_{n-1}, \ldots, a_{n-k+1})$$
+        <p>其中 $k$ 称为方程的<strong>阶数</strong>。差分方程是<strong>离散动力系统</strong>的数学语言——从初始条件出发，通过迭代逐步生成整个序列。</p>
+    </div>
+
+    <div class="box box-formula">
+        <span class="box-label">核心公式</span>
+        <ul>
+            <li><strong>一般形式</strong>：$a_{n+1} = f(a_n)$（一阶自治差分方程）</li>
+            <li><strong>等差数列</strong>：$a_{n+1} = a_n + d$，通项 $a_n = a_0 + nd$</li>
+            <li><strong>等比数列</strong>：$a_{n+1} = r \cdot a_n$，通项 $a_n = a_0 \cdot r^n$</li>
+            <li><strong>Fibonacci 递推</strong>：$F_{n+2} = F_{n+1} + F_n$（二阶差分方程），$F_0 = 0,\; F_1 = 1$</li>
+        </ul>
+    </div>
+
+    <div class="box box-tip">
+        <span class="box-label">提示</span>
+        <p><strong>递推与迭代的关系</strong>：在计算机中，递推关系天然对应 <code>for</code> 循环——每次迭代用前一项（或前几项）算出下一项。这种"逐步推进"的计算方式正是递推的数值实现，也是理解动力系统行为的最直观方法。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-1" rows="24">
+# 从递推关系生成序列
+import numpy as np
+
+# === 等差数列: a_{n+1} = a_n + d ===
+a0, d = 1, 3
+seq_arith = [a0]
+for i in range(9):
+    seq_arith.append(seq_arith[-1] + d)
+print(f"等差数列 (首项={a0}, 公差={d}): {seq_arith}")
+
+# === 等比数列: a_{n+1} = r * a_n ===
+a0, r = 1, 2
+seq_geom = [a0]
+for i in range(9):
+    seq_geom.append(seq_geom[-1] * r)
+print(f"等比数列 (首项={a0}, 公比={r}): {seq_geom}")
+
+# === Fibonacci: F_{n+2} = F_{n+1} + F_n ===
+fib = [0, 1]
+for i in range(8):
+    fib.append(fib[-1] + fib[-2])
+print(f"Fibonacci 序列: {fib}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-1','output-diff-1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-1')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-1"></div>
+
+    <div class="box box-warn">
+        <span class="box-label">注意</span>
+        <p><strong>初始条件至关重要</strong>！同一个递推关系 $a_{n+1} = 2a_n + 1$，取 $a_0 = 0$ 得 $0, 1, 3, 7, 15, \ldots$；取 $a_0 = 1$ 得 $1, 3, 7, 15, 31, \ldots$——差一个初始值，整个序列完全不同。数学竞赛中，"确定递推关系 + 初始条件"才构成一个完整的差分方程问题。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-2" rows="20">
+# 通用递推生成器：传入递推函数 f 和初始值
+def iterate(f, x0, n_steps):
+    """从 x0 出发，迭代 f 共 n_steps 步"""
+    seq = [x0]
+    for _ in range(n_steps):
+        seq.append(f(seq[-1]))
+    return seq
+
+# 示例1: a_{n+1} = 2*a_n + 1, a_0 = 0
+seq1 = iterate(lambda x: 2*x + 1, 0, 8)
+print(f"a_(n+1)=2a_n+1, a_0=0: {seq1}")
+
+# 示例2: 同一递推, a_0 = 1
+seq2 = iterate(lambda x: 2*x + 1, 1, 8)
+print(f"a_(n+1)=2a_n+1, a_0=1: {seq2}")
+
+# 示例3: a_{n+1} = (a_n + 2/a_n)/2 (牛顿法求√2)
+seq3 = iterate(lambda x: (x + 2/x)/2, 1.0, 8)
+print(f"牛顿法求√2:       {[round(x, 10) for x in seq3]}")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-2','output-diff-2')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-2')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-2"></div>
+
+    <!-- 7.2 一阶差分方程 -->
+    <h3 class="sub-title">7.2 一阶差分方程</h3>
+
+    <div class="box box-def">
+        <span class="box-label">定义</span>
+        <p><strong>一阶线性差分方程</strong>的一般形式为：</p>
+        $$a_{n+1} = r \cdot a_n + b$$
+        <p>其中 $r$ 和 $b$ 为常数。当 $b = 0$ 时称为<strong>齐次</strong>方程，当 $b \neq 0$ 时称为<strong>非齐次</strong>方程。这是最简单也最重要的差分方程，其行为完全由参数 $r$ 和 $b$ 决定。</p>
+    </div>
+
+    <div class="box box-formula">
+        <span class="box-label">核心公式</span>
+        <ul>
+            <li><strong>齐次通解</strong>：$a_n = C \cdot r^n$（$C$ 由初始条件确定）</li>
+            <li><strong>非齐次通解</strong>：$a_n = C \cdot r^n + \dfrac{b}{1-r}$（$r \neq 1$ 时）</li>
+            <li><strong>平衡点（不动点）</strong>：令 $a_{n+1} = a_n = a^*$，解得 $a^* = \dfrac{b}{1-r}$</li>
+            <li><strong>稳定性判据</strong>：
+                <ul>
+                    <li>$|r| < 1$：平衡点<strong>稳定</strong>，序列收敛于 $a^*$</li>
+                    <li>$|r| > 1$：平衡点<strong>不稳定</strong>，序列发散</li>
+                    <li>$|r| = 1$：临界情况，需单独讨论</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-3" rows="28">
+# 一阶线性差分方程: a_{n+1} = r*a_n + b
+# 对比不同 r 值的行为
+import numpy as np
+import matplotlib.pyplot as plt
+
+def solve_linear_diff(r, b, a0, N=30):
+    """求解 a_{n+1} = r*a_n + b"""
+    seq = [a0]
+    for _ in range(N):
+        seq.append(r * seq[-1] + b)
+    return np.array(seq)
+
+# 平衡点
+def equilibrium(r, b):
+    return b / (1 - r) if r != 1 else None
+
+# 三种典型情况
+cases = [
+    (0.8, 2, 0, "|r|<1 收敛 (r=0.8)"),
+    (1.2, 2, 0, "|r|>1 发散 (r=1.2)"),
+    (-0.8, 2, 0, "|r|<1 振荡收敛 (r=-0.8)"),
+]
+
+fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+for ax, (r, b, a0, title) in zip(axes, cases):
+    seq = solve_linear_diff(r, b, a0)
+    ax.plot(range(len(seq)), seq, 'b.-', markersize=6)
+    eq = equilibrium(r, b)
+    if eq is not None:
+        ax.axhline(eq, color='r', linestyle='--', label=f'平衡点 a*={eq:.2f}')
+    ax.set_title(title, fontsize=11)
+    ax.set_xlabel('n'); ax.set_ylabel('a_n')
+    ax.legend(fontsize=9); ax.grid(True, alpha=0.3)
+plt.tight_layout(); plt.show()
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-3','output-diff-3')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-3')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-3"></div>
+
+    <div class="box box-tip">
+        <span class="box-label">提示：蛛网图解读</span>
+        <p><strong>蛛网图</strong>（Cobweb diagram）是理解一阶差分方程行为的经典工具：在同一坐标系中画出 $y = f(x)$ 和 $y = x$（对角线），从初始值 $(a_0, 0)$ 出发，竖直走到曲线、水平走到对角线、再竖直走到曲线……如此交替行进，轨迹形如蛛网。当 $|f'(a^*)| < 1$ 时蛛网向平衡点收缩（稳定），$|f'(a^*)| > 1$ 时蛛网向外扩张（不稳定）。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-4" rows="28">
+# 蛛网图 (Cobweb diagram) for a_{n+1} = r*a_n + b
+import numpy as np
+import matplotlib.pyplot as plt
+
+r, b = 0.7, 3
+a_star = b / (1 - r)  # 平衡点
+a0 = 0.0              # 初始值
+
+# 生成蛛网轨迹
+x_path, y_path = [a0], [0]
+a = a0
+for _ in range(15):
+    a_new = r * a + b
+    x_path.extend([a, a])       # 竖直: (a, a) -> (a, a_new)
+    y_path.extend([a, a_new])
+    x_path.extend([a_new, a_new]) # 水平: (a_new, a_new) -> (a_new, a_new)
+    y_path.extend([a_new, a_new])
+    a = a_new
+
+# 绘图
+x_range = np.linspace(min(a0, a_star) - 1, max(a0, a_star) + 5, 100)
+plt.figure(figsize=(7, 6))
+plt.plot(x_range, r * x_range + b, 'b-', linewidth=2, label=f'y = {r}x + {b}')
+plt.plot(x_range, x_range, 'k--', linewidth=1, label='y = x')
+plt.plot(x_path, y_path, 'r-', linewidth=0.8, alpha=0.7)
+plt.plot(a_star, a_star, 'go', markersize=10, label=f'平衡点 a*={a_star:.1f}')
+plt.xlabel('x', fontsize=12); plt.ylabel('y', fontsize=12)
+plt.title(f'蛛网图: a_(n+1) = {r}a_n + {b}', fontsize=13)
+plt.legend(fontsize=10); plt.grid(True, alpha=0.3)
+plt.tight_layout(); plt.show()
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-4','output-diff-4')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-4')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-4"></div>
+
+    <!-- 7.3 Logistic映射初步 -->
+    <h3 class="sub-title">7.3 Logistic映射初步</h3>
+
+    <div class="box box-def">
+        <span class="box-label">定义与背景</span>
+        <p><strong>Logistic 映射</strong>是最著名的非线性差分方程之一：</p>
+        $$x_{n+1} = r \cdot x_n \cdot (1 - x_n)$$
+        <p>其中参数 $r \in [0, 4]$，状态变量 $x_n \in [0, 1]$。</p>
+        <p><strong>生物学动机</strong>：设 $x_n$ 为第 $n$ 代种群数量占环境容纳量的比例（0~1之间）。$(1 - x_n)$ 项表示环境制约——种群越接近满载，增长率越低。参数 $r$ 为内禀增长率。这个简单模型能展现出从稳定、周期振荡到混沌的丰富行为，是数学竞赛中差分方程与动力系统的经典考点。</p>
+    </div>
+
+    <div class="box box-formula">
+        <span class="box-label">核心公式</span>
+        <ul>
+            <li><strong>Logistic 映射</strong>：$x_{n+1} = f(x_n) = r x_n(1 - x_n)$</li>
+            <li><strong>不动点</strong>：$x^* = 0$（总是不动点）和 $x^* = 1 - \dfrac{1}{r}$（$r > 1$ 时存在）</li>
+            <li><strong>稳定性</strong>：$|f'(x^*)| = |r(1 - 2x^*)|$，在不动点处若 $< 1$ 则稳定</li>
+            <li><strong>分岔概览</strong>：
+                <ul>
+                    <li>$1 < r < 3$：收敛到非零不动点</li>
+                    <li>$3 < r \approx 3.57$：周期倍化（2周期、4周期、8周期...）</li>
+                    <li>$r \approx 3.57 \sim 4$：混沌区（内含周期窗口）</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-5" rows="28">
+# Logistic 映射: 不同 r 值的时间序列
+import numpy as np
+import matplotlib.pyplot as plt
+
+def logistic(r, x0, N=50):
+    """生成 Logistic 映射序列"""
+    seq = [x0]
+    for _ in range(N):
+        seq.append(r * seq[-1] * (1 - seq[-1]))
+    return np.array(seq)
+
+# 四种典型 r 值
+r_values = [2.5, 3.2, 3.5, 3.9]
+titles = ['r=2.5 (收敛)', 'r=3.2 (2周期)', 'r=3.5 (4周期)', 'r=3.9 (混沌)']
+x0 = 0.2
+
+fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+for ax, r_val, title in zip(axes.flat, r_values, titles):
+    seq = logistic(r_val, x0)
+    ax.plot(range(len(seq)), seq, '.-', markersize=4, linewidth=0.8)
+    ax.set_title(title, fontsize=12)
+    ax.set_xlabel('n'); ax.set_ylabel('x_n')
+    ax.set_ylim(-0.05, 1.05); ax.grid(True, alpha=0.3)
+plt.suptitle('Logistic 映射时间序列 (x₀=0.2)', fontsize=14, y=1.01)
+plt.tight_layout(); plt.show()
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-5','output-diff-5')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-5')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-5"></div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-6" rows="30">
+# Logistic 映射的蛛网图
+import numpy as np
+import matplotlib.pyplot as plt
+
+r = 3.8   # 混沌区
+x0 = 0.2
+
+# 生成蛛网轨迹
+x_path, y_path = [x0], [0]
+x = x0
+for _ in range(80):
+    x_new = r * x * (1 - x)
+    x_path.extend([x, x]);         y_path.extend([x, x_new])   # 竖直
+    x_path.extend([x_new, x_new]); y_path.extend([x_new, x_new]) # 水平
+    x = x_new
+
+# 绘图
+x_curve = np.linspace(0, 1, 300)
+plt.figure(figsize=(7, 7))
+plt.plot(x_curve, r * x_curve * (1 - x_curve), 'b-', linewidth=2, label=f'f(x) = {r}x(1-x)')
+plt.plot(x_curve, x_curve, 'k--', linewidth=1, label='y = x')
+plt.plot(x_path, y_path, 'r-', linewidth=0.3, alpha=0.5)
+# 不动点
+x_star = 1 - 1/r
+plt.plot(x_star, x_star, 'go', markersize=8, label=f'非零不动点 x*={x_star:.3f}')
+plt.xlabel('x', fontsize=12); plt.ylabel('y', fontsize=12)
+plt.title(f'Logistic 蛛网图 (r={r})', fontsize=13)
+plt.legend(fontsize=10, loc='upper right'); plt.grid(True, alpha=0.3)
+plt.xlim(0, 1); plt.ylim(0, 1)
+plt.tight_layout(); plt.show()
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-6','output-diff-6')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-6')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-6"></div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-7" rows="26">
+# Logistic 映射分岔图
+import numpy as np
+import matplotlib.pyplot as plt
+
+r_values = np.linspace(2.5, 4.0, 500)
+x0 = 0.5
+n_warmup = 200   # 丢弃瞬态
+n_plot = 100     # 保留的迭代点
+
+r_list, x_list = [], []
+for r in r_values:
+    x = x0
+    for _ in range(n_warmup):
+        x = r * x * (1 - x)
+    for _ in range(n_plot):
+        x = r * x * (1 - x)
+        r_list.append(r)
+        x_list.append(x)
+
+plt.figure(figsize=(10, 6))
+plt.scatter(r_list, x_list, s=0.1, c='navy', alpha=0.5, marker='.')
+plt.xlabel('r', fontsize=13); plt.ylabel('x (稳态值)', fontsize=13)
+plt.title('Logistic 映射分岔图', fontsize=14)
+plt.grid(True, alpha=0.2); plt.tight_layout(); plt.show()
+
+print("分岔图解读:")
+print("  r < 3:     单一稳态值 (收敛到不动点)")
+print("  r ≈ 3:     首次分岔 (不动点失稳, 出现2周期)")
+print("  3 < r < 3.57: 周期倍化级联 (2→4→8→16...)")
+print("  r > 3.57:  混沌区 (无穷多不稳定周期轨道)")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-7','output-diff-7')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-7')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-7"></div>
+
+    <div class="box box-warn">
+        <span class="box-label">注意：对初始条件的敏感依赖</span>
+        <p>在混沌区（$r \approx 3.57 \sim 4$），Logistic 映射表现出<strong>蝴蝶效应</strong>：初始值即使只差 $10^{-10}$，经过几十步迭代后序列也会完全不同。这意味着在混沌系统中，<strong>长期预测是不可能的</strong>——这正是"混沌"的本质。数学竞赛中常以此说明：确定性方程不等于可预测性。</p>
+    </div>
+
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-8" rows="18">
+# 混沌的敏感依赖性演示
+import numpy as np
+
+r = 3.9
+x1, x2 = 0.2, 0.2 + 1e-10  # 初始值仅差 10^{-10}
+
+print(f"r = {r}, x1_0 = {x1}, x2_0 = {x2}")
+print(f"初始差: {abs(x2-x1):.1e}\n")
+print(f"{'n':>4}  {'x1_n':>14}  {'x2_n':>14}  {'|差|':>14}")
+for n in range(60):
+    if n < 6 or n % 10 == 0:
+        print(f"{n:4d}  {x1:14.10f}  {x2:14.10f}  {abs(x2-x1):14.2e}")
+    x1 = r * x1 * (1 - x1)
+    x2 = r * x2 * (1 - x2)
+
+print(f"\n仅差10⁻¹⁰的初始值, 50步后差异已达到O(1)——完全不可区分轨迹!")
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-8','output-diff-8')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-8')">清空</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-8"></div>
+
+    <hr>
+
+    <!-- 练习题 -->
+    <h3 class="sub-title">练习题</h3>
+
+    <!-- 练习 1 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 1</span>
+        <p>用递推法生成序列 $a_{n+1} = 3a_n - 2$，初始值 $a_0 = 1$，输出前 10 项，并验证通项公式 $a_n = 2 \cdot 3^n + 1$ 是否成立。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-ex1" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-ex1','output-diff-ex1')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-ex1')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-diff-ex1','diff-ex1')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-ex1"></div>
+
+    <!-- 练习 2 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 2</span>
+        <p>对差分方程 $a_{n+1} = 0.5 a_n + 4$，$a_0 = 10$：<strong>手算</strong>平衡点 $a^*$，判断稳定性，并用代码生成前 20 项验证序列确实收敛到 $a^*$。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-ex2" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-ex2','output-diff-ex2')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-ex2')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-diff-ex2','diff-ex2')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-ex2"></div>
+
+    <!-- 练习 3 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 3</span>
+        <p>绘制 $a_{n+1} = -0.6 a_n + 3$（$a_0 = 0$）的蛛网图，验证序列振荡收敛到平衡点。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-ex3" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-ex3','output-diff-ex3')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-ex3')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-diff-ex3','diff-ex3')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-ex3"></div>
+
+    <!-- 练习 4 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 4</span>
+        <p>对 Logistic 映射 $x_{n+1} = 3.2 \cdot x_n(1-x_n)$，$x_0 = 0.1$：<strong>数值验证</strong>序列最终趋于 2-周期轨道，找出该轨道的两个值，并与不动点 $x^* = 1 - 1/r$ 对比。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-ex4" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-ex4','output-diff-ex4')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-ex4')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-diff-ex4','diff-ex4')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-ex4"></div>
+
+    <!-- 练习 5 -->
+    <div class="box box-exercise">
+        <span class="box-label">练习 5</span>
+        <p>对 $r = 3.9$（混沌区），取两组初始值 $x_0 = 0.3$ 和 $x_0 = 0.3001$，绘制两条轨迹的时间序列对比图，直观展示敏感依赖性。</p>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-ex5" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-ex5','output-diff-ex5')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-ex5')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-diff-ex5','diff-ex5')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-ex5"></div>
+
+    <!-- 🏆 竞赛级挑战题 -->
+    <h3 class="sub-title">🏆 竞赛级挑战题</h3>
+
+    <!-- 竞赛题 1 -->
+    <div class="box box-exercise" style="border-left: 4px solid #ef4444;">
+        <span class="box-label" style="color: #dc2626;">竞赛题 1</span>
+        <p><strong>一阶线性差分方程通项公式的推导与验证</strong></p>
+        <p>对差分方程 $a_{n+1} = r \cdot a_n + b$（$r \neq 1$）：</p>
+        <ol>
+            <li><strong>数学推导</strong>：令 $b_n = a_n - a^*$（其中 $a^* = \frac{b}{1-r}$ 为平衡点），证明 $b_{n+1} = r \cdot b_n$，从而得到通项 $a_n = (a_0 - a^*) \cdot r^n + a^*$；</li>
+            <li>用 $r = 0.8$, $b = 6$, $a_0 = 1$ 验证公式与迭代结果完全一致（逐项对比，误差 < $10^{-12}$）；</li>
+            <li>用公式证明：当 $|r| < 1$ 时 $\lim_{n \to \infty} a_n = a^*$，当 $|r| > 1$ 时 $|a_n| \to \infty$（除非 $a_0 = a^*$）。</li>
+        </ol>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-ex6" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-ex6','output-diff-ex6')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-ex6')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-diff-ex6','diff-ex6')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-ex6"></div>
+
+    <!-- 竞赛题 2 -->
+    <div class="box box-exercise" style="border-left: 4px solid #ef4444;">
+        <span class="box-label" style="color: #dc2626;">竞赛题 2</span>
+        <p><strong>Logistic 映射不动点失稳与周期倍化</strong></p>
+        <p>对 Logistic 映射 $x_{n+1} = f(x) = rx(1-x)$：</p>
+        <ol>
+            <li>求出非零不动点 $x^* = 1 - 1/r$，计算 $f'(x^*) = 2 - r$，说明 $r = 3$ 是不动点失稳的临界值；</li>
+            <li>当不动点失稳后（$r > 3$），2-周期点满足 $f(f(p)) = p$ 且 $f(p) \neq p$。展开 $f(f(x)) = x$ 得四次方程，因式分解去掉两个不动点后，求出 2-周期轨道的显式表达式；</li>
+            <li>用代码对 $r = 3.2$ 验证 2-周期轨道值与理论公式一致；对 $r \in [2.5, 4]$ 绘制分岔图，标注 $r = 3$ 的分岔点。</li>
+        </ol>
+    </div>
+    <div class="code-block">
+        <textarea class="code-textarea" id="code-diff-ex7" rows="4"># 请在此编写代码
+
+</textarea>
+        <div class="code-toolbar">
+            <button class="btn btn-run" onclick="runCode('code-diff-ex7','output-diff-ex7')">运行</button>
+            <button class="btn btn-clear" onclick="clearOutput('output-diff-ex7')">清空</button>
+            <button class="btn btn-answer" onclick="showAnswer('code-diff-ex7','diff-ex7')">查看答案</button>
+        </div>
+    </div>
+    <div class="output-area" id="output-diff-ex7"></div>
+
+</section>
+
+<!-- ================================================================ -->
 <!-- ========== Section 4: NumPy 基础（原Section 3） ========== -->
 <!-- ================================================================ -->
 <section id="numpy" class="section">
@@ -5108,6 +5635,237 @@ if abs(det) > 1e-10:
     print(np.round(M @ inv_M, 6))
 else:
     print("矩阵不可逆（行列式为0）")`,
+
+// --- 差分方程练习 ---
+"diff-ex1": `# 递推生成 + 通项公式验证
+# a_{n+1} = 3*a_n - 2, a_0 = 1
+# 理论通项: a_n = 2 * 3^n + 1
+
+a0 = 1
+seq = [a0]
+for _ in range(9):
+    seq.append(3 * seq[-1] - 2)
+print("递推生成:", seq)
+
+# 验证通项公式
+formula = [2 * 3**n + 1 for n in range(10)]
+print("通项公式:", formula)
+print("两者一致:", seq == formula)`,
+
+"diff-ex2": `# a_{n+1} = 0.5*a_n + 4, a_0 = 10
+# 手算平衡点: a* = b/(1-r) = 4/(1-0.5) = 8
+# |r| = 0.5 < 1, 平衡点稳定
+
+r, b, a0 = 0.5, 4, 10
+a_star = b / (1 - r)
+print(f"平衡点 a* = {a_star}")
+print(f"|r| = {abs(r)} < 1, 平衡点稳定 (序列收敛)")
+
+# 生成序列验证
+seq = [a0]
+for _ in range(19):
+    seq.append(r * seq[-1] + b)
+
+print(f"\\n前20项: {[round(x, 4) for x in seq]}")
+print(f"第20项 a_19 = {seq[-1]:.6f}")
+print(f"平衡点 a*   = {a_star:.6f}")
+print(f"误差        = {abs(seq[-1] - a_star):.2e}")`,
+
+"diff-ex3": `# 蛛网图: a_{n+1} = -0.6*a_n + 3, a_0 = 0
+import numpy as np
+import matplotlib.pyplot as plt
+
+r, b, a0 = -0.6, 3, 0
+a_star = b / (1 - r)
+
+# 生成蛛网轨迹
+x_path, y_path = [a0], [0]
+a = a0
+for _ in range(20):
+    a_new = r * a + b
+    x_path.extend([a, a]);         y_path.extend([a, a_new])
+    x_path.extend([a_new, a_new]); y_path.extend([a_new, a_new])
+    a = a_new
+
+x_range = np.linspace(-1, 8, 100)
+plt.figure(figsize=(7, 6))
+plt.plot(x_range, r * x_range + b, 'b-', linewidth=2, label=f'y = {r}x + {b}')
+plt.plot(x_range, x_range, 'k--', linewidth=1, label='y = x')
+plt.plot(x_path, y_path, 'r-', linewidth=0.8, alpha=0.7)
+plt.plot(a_star, a_star, 'go', markersize=10, label=f'平衡点 a*={a_star:.2f}')
+plt.xlabel('x', fontsize=12); plt.ylabel('y', fontsize=12)
+plt.title(f'蛛网图: a_(n+1) = {r}a_n + {b} (振荡收敛)', fontsize=12)
+plt.legend(fontsize=10); plt.grid(True, alpha=0.3)
+plt.tight_layout(); plt.show()`,
+
+"diff-ex4": `# Logistic 映射 2-周期轨道: r = 3.2
+import numpy as np
+
+r = 3.2
+x0 = 0.1
+
+# 生成序列
+seq = [x0]
+for _ in range(100):
+    seq.append(r * seq[-1] * (1 - seq[-1]))
+
+# 后期值 → 2-周期轨道
+print("后期轨迹 (2-周期):")
+for i in range(90, 100):
+    print(f"  x_{i} = {seq[i]:.8f}")
+
+p1, p2 = seq[-2], seq[-1]
+print(f"\\n2-周期轨道: p1 = {p1:.8f}, p2 = {p2:.8f}")
+print(f"验证 f(p1) = {r*p1*(1-p1):.8f} ≈ p2 = {p2:.8f}")
+print(f"验证 f(p2) = {r*p2*(1-p2):.8f} ≈ p1 = {p1:.8f}")
+
+# 对比不动点
+x_star = 1 - 1/r
+print(f"\\n不动点 x* = 1 - 1/r = {x_star:.8f}")
+print(f"f'(x*) = r(1-2x*) = {r*(1-2*x_star):.4f}")
+print(f"|f'(x*)| = {abs(r*(1-2*x_star)):.4f} > 1 → 不动点失稳")`,
+
+"diff-ex5": `# 敏感依赖性: 两条轨迹对比图
+import numpy as np
+import matplotlib.pyplot as plt
+
+r = 3.9
+x1_0, x2_0 = 0.3, 0.3001
+N = 80
+
+seq1, seq2 = [x1_0], [x2_0]
+for _ in range(N):
+    seq1.append(r * seq1[-1] * (1 - seq1[-1]))
+    seq2.append(r * seq2[-1] * (1 - seq2[-1]))
+
+n = np.arange(N + 1)
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
+ax1.plot(n, seq1, 'b.-', markersize=3, linewidth=0.7, label='x₀=0.3000')
+ax1.plot(n, seq2, 'r.-', markersize=3, linewidth=0.7, label='x₀=0.3001')
+ax1.set_ylabel('x_n'); ax1.legend(fontsize=10)
+ax1.set_title(f'Logistic 映射 (r={r}): 初始值差 0.0001 的两条轨迹', fontsize=12)
+ax1.grid(True, alpha=0.3)
+
+ax2.semilogy(n, [abs(seq1[i]-seq2[i])+1e-16 for i in range(N+1)], 'g-', linewidth=1)
+ax2.set_xlabel('n'); ax2.set_ylabel('|Δx_n| (对数尺度)')
+ax2.set_title('两条轨迹的差异增长 (指数级)', fontsize=11)
+ax2.grid(True, alpha=0.3)
+plt.tight_layout(); plt.show()`,
+
+"diff-ex6": `# 竞赛题1: 通项公式推导与验证
+import numpy as np
+
+# === 数学推导 (代码辅助验证) ===
+# 令 b_n = a_n - a*, 其中 a* = b/(1-r)
+# 则 b_{n+1} = a_{n+1} - a* = (r*a_n + b) - b/(1-r)
+#           = r*(b_n + a*) + b - a*(1-r)  [代入 a* = b/(1-r)]
+#           = r*b_n + (r-1)*a* + b
+#           = r*b_n + (r-1)*b/(1-r) + b
+#           = r*b_n - b + b
+#           = r*b_n  ✓
+# 因此 b_n = b_0 * r^n, 即 a_n - a* = (a_0 - a*) * r^n
+# 通项: a_n = (a_0 - a*) * r^n + a*
+
+r, b, a0 = 0.8, 6, 1
+a_star = b / (1 - r)
+print(f"参数: r={r}, b={b}, a_0={a0}")
+print(f"平衡点 a* = {a_star}")
+print(f"\\n数学推导通项: a_n = (a_0 - a*) * r^n + a*")
+print(f"           = ({a0} - {a_star}) * {r}^n + {a_star}")
+print(f"           = {a0 - a_star} * {r}^n + {a_star}")
+
+# === 数值验证: 逐项对比 ===
+N = 30
+seq_iter = [a0]
+for _ in range(N):
+    seq_iter.append(r * seq_iter[-1] + b)
+
+seq_formula = [(a0 - a_star) * r**n + a_star for n in range(N+1)]
+
+max_err = max(abs(seq_iter[i] - seq_formula[i]) for i in range(N+1))
+print(f"\\n逐项对比 (前{N+1}项):")
+print(f"  迭代法  前5项: {[round(x,6) for x in seq_iter[:5]]}")
+print(f"  公式法  前5项: {[round(x,6) for x in seq_formula[:5]]}")
+print(f"  最大误差: {max_err:.2e} (< 1e-12 ✓)" if max_err < 1e-12 else f"  最大误差: {max_err:.2e}")
+
+# === 稳定性证明验证 ===
+print(f"\\n稳定性分析:")
+print(f"  |r| = {abs(r)} < 1 → r^n → 0 (n→∞)")
+print(f"  因此 a_n → a* = {a_star} (收敛到平衡点) ✓")
+print(f"\\n  若 |r| > 1, 则 |r^n| → ∞")
+print(f"  a_n = (a_0-a*)*r^n + a* → ±∞ (除非 a_0=a*)")
+print(f"  验证: r=1.2, b=6, a_0=1 → a*=30, a_0-a*=-29")
+r2 = 1.2; b2 = 6; a02 = 1
+a_star2 = b2 / (1 - r2)
+seq2 = [a02]
+for _ in range(20):
+    seq2.append(r2 * seq2[-1] + b2)
+print(f"  迭代前10项: {[round(x,2) for x in seq2[:10]]}")
+print(f"  序列发散 → ∞ ✓")`,
+
+"diff-ex7": `# 竞赛题2: Logistic 映射不动点失稳与周期倍化
+import numpy as np
+import matplotlib.pyplot as plt
+
+print("=== 1. 不动点分析 ===")
+print("f(x) = rx(1-x)")
+print("f'(x) = r(1-2x)")
+print("不动点: x* = 0 和 x* = 1 - 1/r")
+print("在 x* = 1-1/r 处: f'(x*) = r(1-2(1-1/r)) = r(2/r-1) = 2-r")
+print("|f'(x*)| < 1 ⟺ |2-r| < 1 ⟺ 1 < r < 3")
+print("因此 r = 3 是不动点失稳的临界值 ✓")
+
+print("\\n=== 2. 2-周期点求解 ===")
+print("2-周期点满足 f(f(x)) = x 且 f(x) ≠ x")
+print("f(f(x)) = r·[rx(1-x)]·[1 - rx(1-x)]")
+print("展开后为四次多项式 = x")
+print("已知 x=0 和 x=1-1/r 是不动点(也是f(f(x))=x的解)")
+print("因式分解掉 (x)(x-(1-1/r)) 后得二次方程:")
+print("  r²x² - r(r+1)x + (r+1) = 0")
+print("解得:")
+print("  p = (r+1 ± √(r²-2r-3)) / (2r)")
+print("  = (r+1 ± √((r-3)(r+1))) / (2r)")
+print("当 r > 3 时, (r-3)(r+1) > 0, 有两个实数解 → 2-周期轨道")
+
+# 数值验证 r = 3.2
+r = 3.2
+disc = (r-3)*(r+1)
+p1 = (r+1 + np.sqrt(disc)) / (2*r)
+p2 = (r+1 - np.sqrt(disc)) / (2*r)
+
+print(f"\\n=== 3. 数值验证 (r={r}) ===")
+print(f"2-周期轨道 (理论公式):")
+print(f"  p1 = {p1:.8f}")
+print(f"  p2 = {p2:.8f}")
+print(f"验证 f(p1) = {r*p1*(1-p1):.8f} ≈ p2 = {p2:.8f}")
+print(f"验证 f(p2) = {r*p2*(1-p2):.8f} ≈ p1 = {p1:.8f}")
+
+# 迭代验证
+x = 0.1
+for _ in range(200):  # 瞬态
+    x = r * x * (1 - x)
+vals = [x]
+for _ in range(4):
+    vals.append(r * vals[-1] * (1 - vals[-1]))
+print(f"迭代收敛到2-周期: {[round(v,8) for v in vals]}")
+
+# 分岔图
+r_arr = np.linspace(2.5, 4.0, 500)
+r_list, x_list = [], []
+for ri in r_arr:
+    x = 0.5
+    for _ in range(200): x = ri * x * (1 - x)
+    for _ in range(100):
+        x = ri * x * (1 - x)
+        r_list.append(ri); x_list.append(x)
+
+plt.figure(figsize=(10, 6))
+plt.scatter(r_list, x_list, s=0.1, c='navy', alpha=0.5, marker='.')
+plt.axvline(x=3, color='red', linestyle='--', linewidth=1.5, label='r=3 (首次分岔)')
+plt.xlabel('r', fontsize=13); plt.ylabel('x (稳态值)', fontsize=13)
+plt.title('Logistic 映射分岔图 (标注 r=3 分岔点)', fontsize=14)
+plt.legend(fontsize=11); plt.grid(True, alpha=0.2)
+plt.tight_layout(); plt.show()`
 };
 
 
